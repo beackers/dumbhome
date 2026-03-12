@@ -1,0 +1,14 @@
+package com.beackers.dumbhome
+
+enum class ShortcutAction(val displayName: String) {
+    OPEN_NOTIFICATIONS("Show notifications"),
+    OPEN_SETTINGS_APP("Open Android Settings"),
+    OPEN_DUMBHOME_SETTINGS("Open DumbHome settings"),
+    OPEN_APP_LAUNCHER("Open app launcher"),
+    NONE("Do nothing");
+
+    companion object {
+        fun fromName(name: String?): ShortcutAction =
+            entries.firstOrNull { it.name == name } ?: NONE
+    }
+}
