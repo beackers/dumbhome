@@ -3,7 +3,7 @@ name: Android CI
 on:
   push:
     branches:
-      - '**'
+      - "**"
   pull_request:
 
 jobs:
@@ -18,22 +18,22 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Lint (everything except Kotlin and Java)
-        uses: super-linter/super-linter/slim@v7
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VALIDATE_ALL_CODEBASE: false
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          VALIDATE_JAVA: false
-          VALIDATE_KOTLIN: false
+      - name: Lint
+        run: ./gradlew lint
 
-      - name: Lint (Kotlin and Java)
+      - name: Lint debug
         run: ./gradlew lintDebug
 
       - name: Compile debug build
         run: ./gradlew assembleDebug
+
+      - name: Upload debug APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk
+          path: app/build/outputs/apk/debug/*.apk
