@@ -11,7 +11,6 @@ import android.view.KeyEvent
 import android.view.View
 import android.widget.ImageView
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -182,17 +181,5 @@ class MainActivity : AppCompatActivity() {
             }
         }
         return false
-    }
-
-    fun openWallpaperPicker() {
-        openFilePicker.launch(Intent(this, FilePickerActivity::class.java))
-    }
-
-    fun openLiveWallpaperPicker() {
-        try {
-            startActivity(Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER))
-        } catch (_: ActivityNotFoundException) {
-            startActivity(Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER))
-        }
     }
 }
