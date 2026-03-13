@@ -3,6 +3,7 @@ package com.beackers.dumbhome
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -55,7 +56,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun onClickRow(position: Int) {
         when (position) {
-            0 -> pickWallpaper.launch(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            0 -> pickWallpaper.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
             1 -> pickAction(Prefs.KEY_F11)
             2 -> pickAction(Prefs.KEY_MENU)
             3 -> pickAction(Prefs.KEY_UP)
