@@ -1,3 +1,6 @@
+# The java Symlink
+/java
+
 # Gradle files
 .gradle/
 build/
