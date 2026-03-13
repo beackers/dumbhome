@@ -6,9 +6,12 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.text.TextUtils
 import android.view.KeyEvent
 import android.view.View
 import android.widget.ImageView
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -36,6 +39,7 @@ class MainActivity : AppCompatActivity() {
 
         loadWallpaper()
         ensurePermissions()
+        ensureNotificationAccess()
     }
 
     override fun onResume() {
@@ -92,9 +96,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         val rows = NotificationStore.list().map {
-            val title = it.notification.extras.getCharSequence("android.title")?.toString().orEmpty()
-            val text = it.notification.extras.getCharSequence("android.text")?.toString().orEmpty()
-            "${it.packageName}: $title $text".trim()
+            "${it.packageName}: ${it.title} ${it.text}".trim()
         }.ifEmpty { listOf("No notifications. Enable notification access in system settings.") }
         notificationList.adapter = SimpleTextAdapter(rows)
         shade.visibility = View.VISIBLE
@@ -133,6 +135,64 @@ class MainActivity : AppCompatActivity() {
         }
         if (permissions.isNotEmpty()) {
             requestPermissions(permissions.toTypedArray(), 11)
+        }
+    }
+
+    private fun ensureNotificationAccess() {
+        if (hasNotificationListenerAccess() || hasAccessibilityNotificationAccess()) {
+            return
+        }
+
+        val listenerIntent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+        if (listenerIntent.resolveActivity(packageManager) != null) {
+            Toast.makeText(this, "Enable DumbHome notification access.", Toast.LENGTH_LONG).show()
+            startActivity(listenerIntent)
+            return
+        }
+
+        val accessibilityIntent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+        if (accessibilityIntent.resolveActivity(packageManager) != null) {
+            Toast.makeText(
+                this,
+                "Enable DumbHome Notification Accessibility service to read notifications.",
+                Toast.LENGTH_LONG
+            ).show()
+            startActivity(accessibilityIntent)
+        }
+    }
+
+    private fun hasNotificationListenerAccess(): Boolean {
+        val listeners = Settings.Secure.getString(contentResolver, "enabled_notification_listeners") ?: return false
+        return listeners.contains(packageName)
+    }
+
+    private fun hasAccessibilityNotificationAccess(): Boolean {
+        val enabled = Settings.Secure.getInt(contentResolver, Settings.Secure.ACCESSIBILITY_ENABLED, 0) == 1
+        if (!enabled) {
+            return false
+        }
+
+        val enabledServices = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: return false
+        val expectedService = TextUtils.SimpleStringSplitter(':')
+        expectedService.setString(enabledServices)
+        val target = "${packageName}/${com.beackers.dumbhome.notifications.DumbNotificationAccessibilityService::class.java.name}"
+        while (expectedService.hasNext()) {
+            if (expectedService.next().equals(target, ignoreCase = true)) {
+                return true
+            }
+        }
+        return false
+    }
+
+    fun openWallpaperPicker() {
+        openFilePicker.launch(Intent(this, FilePickerActivity::class.java))
+    }
+
+    fun openLiveWallpaperPicker() {
+        try {
+            startActivity(Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER))
+        } catch (_: ActivityNotFoundException) {
+            startActivity(Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER))
         }
     }
 }
