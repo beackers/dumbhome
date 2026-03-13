@@ -1,11 +1,8 @@
 package com.beackers.dumbhome
 
 import android.Manifest
-import android.app.WallpaperManager
-import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -27,12 +24,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var wallpaper: ImageView
     private lateinit var shade: View
     private lateinit var notificationList: RecyclerView
-
-    private val openFilePicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val uri = result.data?.data ?: return@registerForActivityResult
-        prefs.setWallpaper(uri)
-        loadWallpaper()
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -131,16 +122,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadWallpaper() {
-        val uri = prefs.getWallpaperUri()
-        if (uri == null) {
-            wallpaper.setImageDrawable(null)
-            return
-        }
-        runCatching {
-            contentResolver.openInputStream(uri)?.use { stream ->
-                wallpaper.setImageBitmap(BitmapFactory.decodeStream(stream))
-            }
-        }
+        wallpaper.setImageBitmap(WallpaperStorage.load(this))
     }
 
     private fun ensurePermissions() {

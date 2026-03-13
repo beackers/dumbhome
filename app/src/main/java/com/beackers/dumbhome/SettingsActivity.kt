@@ -1,9 +1,7 @@
 package com.beackers.dumbhome
 
-import android.app.WallpaperManager
-import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -17,11 +15,16 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var adapter: SimpleTextAdapter
     private val rows = mutableListOf<String>()
 
-    private val openFilePicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val uri = result.data?.data ?: return@registerForActivityResult
-        prefs.setWallpaper(uri)
-        // Validate file can be decoded before leaving settings.
-        contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) }
+    private val cropWallpaper = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        refreshRows()
+    }
+
+    private val pickWallpaper = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
+        if (uri == null) return@registerForActivityResult
+        cropWallpaper.launch(
+            Intent(this, WallpaperCropActivity::class.java)
+                .putExtra(WallpaperCropActivity.EXTRA_IMAGE_URI, uri),
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,8 +42,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun refreshRows() {
         rows.clear()
-        rows += "Change home image (file picker)"
-        rows += "Set live wallpaper"
+        rows += "Change home image"
         rows += "Configure F11 (${prefs.getShortcut(Prefs.KEY_F11).displayName})"
         rows += "Configure Menu (${prefs.getShortcut(Prefs.KEY_MENU).displayName})"
         rows += "Configure Up (${prefs.getShortcut(Prefs.KEY_UP).displayName})"
@@ -53,15 +55,14 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun onClickRow(position: Int) {
         when (position) {
-            0 -> openFilePicker.launch(Intent(this, FilePickerActivity::class.java))
-            1 -> openLiveWallpaperPicker()
-            2 -> pickAction(Prefs.KEY_F11)
-            3 -> pickAction(Prefs.KEY_MENU)
-            4 -> pickAction(Prefs.KEY_UP)
-            5 -> pickAction(Prefs.KEY_DOWN)
-            6 -> pickAction(Prefs.KEY_LEFT)
-            7 -> pickAction(Prefs.KEY_RIGHT)
-            8 -> finish()
+            0 -> pickWallpaper.launch(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            1 -> pickAction(Prefs.KEY_F11)
+            2 -> pickAction(Prefs.KEY_MENU)
+            3 -> pickAction(Prefs.KEY_UP)
+            4 -> pickAction(Prefs.KEY_DOWN)
+            5 -> pickAction(Prefs.KEY_LEFT)
+            6 -> pickAction(Prefs.KEY_RIGHT)
+            7 -> finish()
         }
     }
 
@@ -74,13 +75,5 @@ class SettingsActivity : AppCompatActivity() {
                 refreshRows()
             }
             .show()
-    }
-
-    private fun openLiveWallpaperPicker() {
-        try {
-            startActivity(Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER))
-        } catch (_: ActivityNotFoundException) {
-            startActivity(Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER))
-        }
     }
 }
