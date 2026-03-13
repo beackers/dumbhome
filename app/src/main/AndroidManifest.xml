@@ -19,6 +19,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".WallpaperCropActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".FilePickerActivity"
             android:exported="false" />
 
