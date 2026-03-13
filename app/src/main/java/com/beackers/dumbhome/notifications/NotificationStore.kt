@@ -1,15 +1,30 @@
 package com.beackers.dumbhome.notifications
 
-import android.service.notification.StatusBarNotification
 import java.util.concurrent.CopyOnWriteArrayList
 
 object NotificationStore {
-    private val current = CopyOnWriteArrayList<StatusBarNotification>()
+    data class NotificationEntry(
+        val packageName: String,
+        val title: String,
+        val text: String,
+        val postTime: Long
+    )
 
-    fun update(all: Array<StatusBarNotification>) {
+    private val current = CopyOnWriteArrayList<NotificationEntry>()
+
+    fun updateFromStatusBar(packageNotifications: List<NotificationEntry>) {
         current.clear()
-        current.addAll(all.sortedByDescending { it.postTime })
+        current.addAll(packageNotifications.sortedByDescending { it.postTime })
     }
 
-    fun list(): List<StatusBarNotification> = current.toList()
+    fun updateFromAccessibility(notification: NotificationEntry) {
+        if (notification.packageName.isBlank() && notification.title.isBlank() && notification.text.isBlank()) {
+            return
+        }
+
+        current.removeAll { it.packageName == notification.packageName && it.title == notification.title && it.text == notification.text }
+        current.add(0, notification)
+    }
+
+    fun list(): List<NotificationEntry> = current.toList().sortedByDescending { it.postTime }
 }
