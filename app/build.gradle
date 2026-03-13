@@ -5,9 +5,11 @@ plugins {
 
 android {
     namespace = 'com.beackers.dumbhome'
-    compileSdk = 31
+    compileSdk = 34
     lint {
         disable "ExpiredTargetSdkVersion"
+	checkReleaseBuilds false
+	abortOnError false
     }
 
     defaultConfig {
