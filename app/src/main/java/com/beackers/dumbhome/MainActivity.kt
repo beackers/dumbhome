@@ -12,13 +12,19 @@ import android.provider.Settings
 import android.view.KeyEvent
 import android.view.View
 import android.widget.ImageView
+import android.app.PendingIntent          
+import android.provider.Settings
+
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+
 import com.beackers.dumbhome.notifications.NotificationStore
+import com.beackers.dumbhome.notifications.NotificationRow
+
 
 class MainActivity : AppCompatActivity() {
     private lateinit var prefs: Prefs
@@ -101,11 +107,17 @@ class MainActivity : AppCompatActivity() {
             shade.visibility = View.GONE
             return
         }
-        val rows = NotificationStore.list().map {
-            val title = it.notification.extras.getCharSequence("android.title")?.toString().orEmpty()
-            val text = it.notification.extras.getCharSequence("android.text")?.toString().orEmpty()
-            "${it.packageName}: $title $text".trim()
-        }.ifEmpty { listOf("No notifications. Enable notification access in system settings.") }
+        if (!hasNotificationAccess()) {
+          requestNotificationsPermissions()
+        }
+        val rows = NotificationStore.rows()
+          .ifEmpty { listOf(NotificationRow(
+            key = "",
+            packageName = "",
+            title = "",
+            text = "All caught up :)",
+            intent = null
+          )) }
         notificationList.adapter = SimpleTextAdapter(rows)
         shade.visibility = View.VISIBLE
         shade.requestFocus()
@@ -122,7 +134,7 @@ class MainActivity : AppCompatActivity() {
             .setItems(labels.toTypedArray()) { _, which ->
                 val pkg = apps[which].activityInfo.packageName
                 pm.getLaunchIntentForPackage(pkg)?.let { launchIntent ->
-                    startActivity(launchIntent)
+                startActivity(launchIntent)
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -165,5 +177,24 @@ class MainActivity : AppCompatActivity() {
         } catch (_: ActivityNotFoundException) {
             startActivity(Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER))
         }
+    }
+
+    private fun hasNotificationAccess(): Boolean {
+      val enabled = Settings.Secure.getString(
+        contentResolver,
+        "enabled_notification_listeners"
+      ) ?: return false
+      return enabled.contains(packageName)
+    }
+
+    private fun requestNotificationsPermissions() {
+      AlertDialog.Builder(this)
+        .setTitle("DumbHome is requesting permissions")
+        .setMessage("DumbHome is requestiong access to read your notifications. \nDumbHome does not collect or share your information.")
+        .setPositiveButton("Open settings", { _, _ ->
+      startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        })
+        .setNegativeButton("Cancel", null)
+        .show()
     }
 }
