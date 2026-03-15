@@ -24,7 +24,7 @@ class NotificationAdapter(
         val row = rows[position]
 
         holder.view.text =
-            "${row.packageName}\n${row.title}\n${row.text}"
+            "${row.appName}\n${row.title}\n${row.text}"
 
         holder.view.setOnClickListener {
             row.intent?.send()

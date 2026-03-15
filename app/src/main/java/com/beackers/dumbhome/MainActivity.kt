@@ -111,7 +111,7 @@ class MainActivity : AppCompatActivity() {
           requestNotificationsPermissions()
           return
         }
-        val rows = NotificationStore.rows()
+        val rows = NotificationStore.rows(this)
           .ifEmpty { listOf(NotificationRow(
             key = "",
             appName = "",
