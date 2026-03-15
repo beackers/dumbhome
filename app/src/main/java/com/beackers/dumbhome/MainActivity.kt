@@ -8,7 +8,6 @@ import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.view.KeyEvent
 import android.view.View
 import android.widget.ImageView
@@ -24,6 +23,7 @@ import androidx.recyclerview.widget.RecyclerView
 
 import com.beackers.dumbhome.notifications.NotificationStore
 import com.beackers.dumbhome.notifications.NotificationRow
+import com.beackers.dumbhome.notifications.NotificationAdapter
 
 
 class MainActivity : AppCompatActivity() {
@@ -109,18 +109,20 @@ class MainActivity : AppCompatActivity() {
         }
         if (!hasNotificationAccess()) {
           requestNotificationsPermissions()
+          return
         }
         val rows = NotificationStore.rows()
           .ifEmpty { listOf(NotificationRow(
             key = "",
-            packageName = "",
+            appName = "",
             title = "",
             text = "All caught up :)",
             intent = null
           )) }
-        notificationList.adapter = SimpleTextAdapter(rows)
+        notificationList.adapter = NotificationAdapter(rows)
         shade.visibility = View.VISIBLE
         shade.requestFocus()
+        return
     }
 
     private fun showAppLauncher() {
@@ -139,6 +141,7 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton("Cancel", null)
             .show()
+        return
     }
 
     private fun loadWallpaper() {
@@ -152,6 +155,7 @@ class MainActivity : AppCompatActivity() {
                 wallpaper.setImageBitmap(BitmapFactory.decodeStream(stream))
             }
         }
+        return
     }
 
     private fun ensurePermissions() {
@@ -165,10 +169,12 @@ class MainActivity : AppCompatActivity() {
         if (permissions.isNotEmpty()) {
             requestPermissions(permissions.toTypedArray(), 11)
         }
+        return
     }
 
     fun openWallpaperPicker() {
         openFilePicker.launch(Intent(this, FilePickerActivity::class.java))
+        return
     }
 
     fun openLiveWallpaperPicker() {
