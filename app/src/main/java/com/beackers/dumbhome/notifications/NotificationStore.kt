@@ -7,9 +7,9 @@ import java.util.concurrent.CopyOnWriteArrayList
 object NotificationStore {
   private val current = CopyOnWriteArrayList<StatusBarNotification>()
 
-    fun update(all: Array<StatusBarNotification>) {
+    fun updateFromStatusBar(packageNotifications: List<NotificationEntry>) {
         current.clear()
-        current.addAll(all.sortedByDescending { it.postTime })
+        current.addAll(packageNotifications.sortedByDescending { it.postTime })
     }
 
     fun rows(context: Context): List<NotificationRow> {

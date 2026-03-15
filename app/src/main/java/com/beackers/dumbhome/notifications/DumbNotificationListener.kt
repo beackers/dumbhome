@@ -17,6 +17,14 @@ class DumbNotificationListener : NotificationListenerService() {
     }
 
     private fun refresh() {
-        NotificationStore.update(activeNotifications ?: emptyArray())
+        val rows = (activeNotifications ?: emptyArray()).map {
+            NotificationStore.NotificationEntry(
+                packageName = it.packageName.orEmpty(),
+                title = it.notification.extras.getCharSequence("android.title")?.toString().orEmpty(),
+                text = it.notification.extras.getCharSequence("android.text")?.toString().orEmpty(),
+                postTime = it.postTime
+            )
+        }
+        NotificationStore.updateFromStatusBar(rows)
     }
 }

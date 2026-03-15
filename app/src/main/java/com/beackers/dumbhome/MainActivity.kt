@@ -1,11 +1,8 @@
 package com.beackers.dumbhome
 
 import android.Manifest
-import android.app.WallpaperManager
-import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
@@ -15,6 +12,8 @@ import android.app.PendingIntent
 import android.provider.Settings
 
 import androidx.activity.result.contract.ActivityResultContracts
+import android.text.TextUtils
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -32,12 +31,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var shade: View
     private lateinit var notificationList: RecyclerView
 
-    private val openFilePicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val uri = result.data?.data ?: return@registerForActivityResult
-        prefs.setWallpaper(uri)
-        loadWallpaper()
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -52,6 +45,7 @@ class MainActivity : AppCompatActivity() {
 
         loadWallpaper()
         ensurePermissions()
+        ensureNotificationAccess()
     }
 
     override fun onResume() {
@@ -145,17 +139,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadWallpaper() {
-        val uri = prefs.getWallpaperUri()
-        if (uri == null) {
-            wallpaper.setImageDrawable(null)
-            return
-        }
-        runCatching {
-            contentResolver.openInputStream(uri)?.use { stream ->
-                wallpaper.setImageBitmap(BitmapFactory.decodeStream(stream))
-            }
-        }
-        return
+        wallpaper.setImageBitmap(WallpaperStorage.load(this))
     }
 
     private fun ensurePermissions() {
@@ -172,16 +156,26 @@ class MainActivity : AppCompatActivity() {
         return
     }
 
-    fun openWallpaperPicker() {
-        openFilePicker.launch(Intent(this, FilePickerActivity::class.java))
-        return
-    }
+    private fun ensureNotificationAccess() {
+        if (hasNotificationListenerAccess() || hasAccessibilityNotificationAccess()) {
+            return
+        }
 
-    fun openLiveWallpaperPicker() {
-        try {
-            startActivity(Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER))
-        } catch (_: ActivityNotFoundException) {
-            startActivity(Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER))
+        val listenerIntent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+        if (listenerIntent.resolveActivity(packageManager) != null) {
+            Toast.makeText(this, "Enable DumbHome notification access.", Toast.LENGTH_LONG).show()
+            startActivity(listenerIntent)
+            return
+        }
+
+        val accessibilityIntent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+        if (accessibilityIntent.resolveActivity(packageManager) != null) {
+            Toast.makeText(
+                this,
+                "Enable DumbHome Notification Accessibility service to read notifications.",
+                Toast.LENGTH_LONG
+            ).show()
+            startActivity(accessibilityIntent)
         }
     }
 
