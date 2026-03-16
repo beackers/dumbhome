@@ -43,7 +43,15 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        var window = getWindow()
+
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        window.setDecorFitsSystemWindows(false)
+
         setContentView(R.layout.activity_main)
+
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
 
         prefs = Prefs(this)
         prefs.initializeDefaultsIfNeeded()
