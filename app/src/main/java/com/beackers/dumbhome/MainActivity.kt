@@ -143,21 +143,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showAppLauncher() {
-        val pm = packageManager
-        val intent = Intent(Intent.ACTION_MAIN, null).addCategory(Intent.CATEGORY_LAUNCHER)
-        val apps = pm.queryIntentActivities(intent, 0).sortedBy { it.loadLabel(pm).toString().lowercase() }
-        val labels = apps.map { it.loadLabel(pm).toString() }
-
-        AlertDialog.Builder(this)
-            .setTitle("Launch app")
-            .setItems(labels.toTypedArray()) { _, which ->
-                val pkg = apps[which].activityInfo.packageName
-                pm.getLaunchIntentForPackage(pkg)?.let { launchIntent ->
-                startActivity(launchIntent)
-                }
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+        startActivity(Intent(this, LauncherActivity::class.java))
         return
     }
 
