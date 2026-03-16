@@ -23,10 +23,6 @@
             android:exported="false" />
 
         <activity
-            android:name=".FilePickerActivity"
-            android:exported="false" />
-
-        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTask">
