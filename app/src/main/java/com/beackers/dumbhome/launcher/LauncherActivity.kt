@@ -85,27 +85,27 @@ class LauncherActivity : AppCompatActivity() {
       else -> null
     }
   }
-his:
 
-private fun jumpToLetterGroup(keyCode: Int) {
+  private fun jumpToLetterGroup(keyCode: Int) {
 
     val letters = lettersForKey(keyCode) ?: return
 
     val positions = letters
-        .mapNotNull { letterIndex[it] }
-        .sorted()
+      .mapNotNull { letterIndex[it] }
+      .sorted()
 
     if (positions.isEmpty()) return
 
     if (keyCode == lastKeyPressed) {
-        cycleOffset = (cycleOffset + 1) % positions.size
+      cycleOffset = (cycleOffset + 1) % positions.size
     } else {
-        cycleOffset = 0
-        lastKeyPressed = keyCode
+      cycleOffset = 0
+      lastKeyPressed = keyCode
     }
 
     val index = positions[cycleOffset]
 
-    recycler.scrollToPosition(index)
-}
+    (recycler.layoutManager as LinearLayoutManager)
+      .scrollToPositionWithOffset(index, 0)
+  }
 }
