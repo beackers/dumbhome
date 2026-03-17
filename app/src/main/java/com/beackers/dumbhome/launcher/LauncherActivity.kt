@@ -29,10 +29,18 @@ class LauncherActivity : AppCompatActivity() {
     apps = getLaunchableApps()
     buildLetterIndex()
     recycler.layoutManager = LinearLayoutManager(this)
+
+    val pickMode = intent.getBooleanExtra("pick_mode", false)
     recycler.adapter = AppLauncherAdapter(apps) { app ->
-        val intent = packageManager.getLaunchIntentForPackage(app.packageName)
-        startActivity(intent)
-        finish()
+        if (pickMode) {
+            val result = Intent().putExtra("package", app.packageName)
+            setResult(RESULT_OK, result)
+            finish()
+        } else {
+            val intent = packageManager.getLaunchIntentForPackage(app.packageName)
+            startActivity(intent)
+            finish()
+        }
     }
   }
 

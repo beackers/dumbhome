@@ -7,6 +7,7 @@ enum class ShortcutAction(val displayName: String) {
     OPEN_APP_LAUNCHER("Open app launcher"),
     OPEN_ACTIVITY("Open an app"),
     OPEN_ASSISTANT("Open default assistant"),
+    OPEN_CAMERA("Open camera app"),
     NONE("Do nothing");
 
     companion object {

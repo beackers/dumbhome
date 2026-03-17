@@ -25,6 +25,14 @@ class Prefs(context: Context) {
         prefs.edit().putString(key, action.name).apply()
     }
 
+    fun setShortcutApp(key: String, packageName: String) {
+        prefs.edit().putString("${key}_app", packageName).apply()
+    }
+
+    fun getShortcutApp(key: String): String? {
+        return prefs.getString("${key}_app", null)
+    }
+
     fun setWallpaper(uri: Uri?) {
         prefs.edit().putString(KEY_WALLPAPER_URI, uri?.toString()).apply()
     }

@@ -10,6 +10,7 @@ import android.view.View
 import android.widget.ImageView
 import android.app.PendingIntent          
 import android.provider.Settings
+import android.provider.MediaStore
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.IntentFilter
@@ -98,13 +99,13 @@ class MainActivity : AppCompatActivity() {
             else -> null
         }
         if (shortcut != null) {
-            runShortcut(shortcut)
+            runShortcut(shortcut, keyCode)
             return true
         }
         return super.onKeyDown(keyCode, event)
     }
 
-    private fun runShortcut(action: ShortcutAction) {
+    private fun runShortcut(action: ShortcutAction, keyCode: Int) {
         when (action) {
             ShortcutAction.OPEN_NOTIFICATIONS -> toggleNotifications()
             ShortcutAction.OPEN_SETTINGS_APP -> {
@@ -116,8 +117,35 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent(this, SettingsActivity::class.java))
             }
             ShortcutAction.OPEN_APP_LAUNCHER -> showAppLauncher()
-            ShortcutAction.OPEN_ACTIVITY -> Unit
-            ShortcutAction.OPEN_ASSISTANT -> Unit
+            ShortcutAction.OPEN_ACTIVITY -> {
+                val prefKey = when (keyCode) {
+                    KeyEvent.KEYCODE_F11 -> Prefs.KEY_F11
+                    KeyEvent.KEYCODE_MENU -> Prefs.KEY_MENU
+                    KeyEvent.KEYCODE_DPAD_UP -> Prefs.KEY_UP
+                    KeyEvent.KEYCODE_DPAD_DOWN -> Prefs.KEY_DOWN
+                    KeyEvent.KEYCODE_DPAD_LEFT -> Prefs.KEY_LEFT
+                    KeyEvent.KEYCODE_DPAD_RIGHT -> Prefs.KEY_RIGHT
+                    else -> null
+                }
+                val packageName = prefKey?.let { prefs.getShortcutApp(it) }
+                if (packageName != null) {
+                  val intent = packageManager.getLaunchIntentForPackage(packageName)
+                  intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                  if (intent != null) {
+                    startActivity(intent)
+                  } else {
+                    Toast.makeText(this, "App not found", Toast.LENGTH_SHORT).show()
+                  }
+                }
+            }
+            ShortcutAction.OPEN_ASSISTANT -> {
+                val intent = Intent(Intent.ACTION_ASSIST)
+                startActivity(intent)
+            }
+            ShortcutAction.OPEN_CAMERA -> {
+                val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+                startActivity(intent)
+            }
             ShortcutAction.NONE -> Unit
         }
     }
