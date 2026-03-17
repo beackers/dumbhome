@@ -131,7 +131,7 @@ class MainActivity : AppCompatActivity() {
             return true
         }
 
-        if (shade.visibility == View.VISIBLE && !(keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_MENU) {
+        if (shade.visibility == View.VISIBLE && (keyCode != KeyEvent.KEYCODE_BACK && keyCode != KeyEvent.KEYCODE_MENU)) {
             return super.onKeyDown(keyCode, event)
         }
 
