@@ -2,8 +2,10 @@ package com.beackers.dumbhome.notifications
 
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import android.content.Intent
 
 class DumbNotificationListener : NotificationListenerService() {
+
     override fun onListenerConnected() {
         refresh()
     }
@@ -17,14 +19,7 @@ class DumbNotificationListener : NotificationListenerService() {
     }
 
     private fun refresh() {
-        val rows = (activeNotifications ?: emptyArray()).map {
-            NotificationStore.NotificationEntry(
-                packageName = it.packageName.orEmpty(),
-                title = it.notification.extras.getCharSequence("android.title")?.toString().orEmpty(),
-                text = it.notification.extras.getCharSequence("android.text")?.toString().orEmpty(),
-                postTime = it.postTime
-            )
-        }
-        NotificationStore.updateFromStatusBar(rows)
+        NotificationStore.update(activeNotifications ?: emptyArray())
+        sendBroadcast(Intent("com.beackers.dumbhome.NOTIFICATIONS_UPDATED"))
     }
 }

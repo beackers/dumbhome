@@ -1,27 +1,13 @@
 # dumbhome
 
-`dumbhome` is an Android launcher/home screen built for a flip phone with physical keyboard controls.
+My phone's launcher.
 
-## Package ID
+I don't expect anyone to use this, but I will absolutely use it because I can do pretty much whatever I want with this.
 
-- `com.beackers.dumbhome`
+This is a launcher that specifically targets the Hot Pepper Tabasco, HPPL62A, and patches some limitations like
 
-## Implemented features
+* weird wallpaper zoom/crop
+* not showing all apps
+* strange notifications shade
 
-- HOME activity (`MainActivity`) that can be set as the default launcher.
-- Keyboard-first operation for flip phones:
-  - `ENTER` opens app launcher.
-  - Shortcut keys for `F11`, `Menu`, `Up`, `Down`, `Left`, `Right`.
-- First-run default key mapping:
-  - `F11` → notifications panel
-  - `Down` → `com.android.settings`
-- Built-in non-SAF wallpaper file picker (`FilePickerActivity`) browsing filesystem image files.
-- Live wallpaper selection shortcut.
-- In-app custom notification shade powered by a `NotificationListenerService`.
-- Keyboard-focus-friendly settings list in `SettingsActivity`.
-
-## Notes
-
-- Targets Android 12 / API 31 (suitable for Android 12 Go devices).
-- Notification content in the custom shade requires enabling notification access for DumbHome.
-- Wallpaper file browsing uses legacy external storage access APIs and `READ_EXTERNAL_STORAGE`.
+I don't expect you to use it (and you probably shouldn't, because it depends on the exact keypad layout of my phone). You can try if you want, though. Getting out may require a keyboard.

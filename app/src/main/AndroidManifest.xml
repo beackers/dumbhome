@@ -5,8 +5,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
         tools:ignore="ProtectedPermissions" />
-    <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE"
-        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
 
     <application
         android:allowBackup="true"
@@ -15,6 +14,10 @@
         android:roundIcon="@drawable/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.DumbHome">
+
+        <meta-data
+            android:name="android.settings.APPLICATION_PREFERENCES"
+            android:value=".SettingsActivity"/>
 
         <activity
             android:name=".SettingsActivity"
@@ -25,7 +28,7 @@
             android:exported="false" />
 
         <activity
-            android:name=".FilePickerActivity"
+            android:name=".launcher.LauncherActivity"
             android:exported="false" />
 
         <activity
@@ -37,6 +40,10 @@
                 <category android:name="android.intent.category.HOME" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
         </activity>
 
         <service
@@ -47,20 +54,6 @@
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
-        </service>
-
-        <service
-            android:name=".notifications.DumbNotificationAccessibilityService"
-            android:exported="false"
-            android:label="DumbHome Notification Accessibility"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/notification_accessibility_service" />
         </service>
 
     </application>

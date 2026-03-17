@@ -1,30 +1,41 @@
 package com.beackers.dumbhome.notifications
 
+import android.service.notification.StatusBarNotification
+import android.content.Context
 import java.util.concurrent.CopyOnWriteArrayList
 
 object NotificationStore {
-    data class NotificationEntry(
-        val packageName: String,
-        val title: String,
-        val text: String,
-        val postTime: Long
-    )
+  private val current = CopyOnWriteArrayList<StatusBarNotification>()
 
-    private val current = CopyOnWriteArrayList<NotificationEntry>()
-
-    fun updateFromStatusBar(packageNotifications: List<NotificationEntry>) {
+    fun update(all: Array<StatusBarNotification>) {
         current.clear()
-        current.addAll(packageNotifications.sortedByDescending { it.postTime })
+        current.addAll(all.sortedByDescending { it.postTime })
     }
 
-    fun updateFromAccessibility(notification: NotificationEntry) {
-        if (notification.packageName.isBlank() && notification.title.isBlank() && notification.text.isBlank()) {
-            return
-        }
+    fun rows(context: Context): List<NotificationRow> {
+      return current.map { sbn ->
+        val extras = sbn.notification.extras
+        val title = extras.getCharSequence("android.title")?.toString() ?: ""
+        val text = extras.getCharSequence("android.text")?.toString()
+          ?: extras.getCharSequence("android.bigText")?.toString()
+          ?: ""
+        val pm = context.packageManager
+        val appName = try {
+            pm.getApplicationLabel(
+              pm.getApplicationInfo(
+                sbn.packageName, 0)
+              ).toString()
+            } catch (e: Exception) {
+              sbn.packageName
+            }
 
-        current.removeAll { it.packageName == notification.packageName && it.title == notification.title && it.text == notification.text }
-        current.add(0, notification)
+        NotificationRow(
+          key = sbn.key,
+          appName = appName,
+          title = title,
+          text = text,
+          intent = sbn.notification.contentIntent
+        )
+      }
     }
-
-    fun list(): List<NotificationEntry> = current.toList().sortedByDescending { it.postTime }
 }

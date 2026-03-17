@@ -5,28 +5,55 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
-import android.text.TextUtils
 import android.view.KeyEvent
 import android.view.View
 import android.widget.ImageView
+import android.app.PendingIntent          
+import android.provider.Settings
+import android.provider.MediaStore
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.IntentFilter
+
+import androidx.activity.result.contract.ActivityResultContracts
+import android.text.TextUtils
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+
 import com.beackers.dumbhome.notifications.NotificationStore
+import com.beackers.dumbhome.notifications.NotificationRow
+import com.beackers.dumbhome.notifications.NotificationAdapter
+import com.beackers.dumbhome.launcher.LauncherActivity
+
 
 class MainActivity : AppCompatActivity() {
     private lateinit var prefs: Prefs
     private lateinit var wallpaper: ImageView
     private lateinit var shade: View
     private lateinit var notificationList: RecyclerView
+    private var receiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (shade.visibility == View.VISIBLE) {
+                notificationList.adapter = NotificationAdapter(NotificationStore.rows(this@MainActivity))
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        var window = getWindow()
+
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        window.setDecorFitsSystemWindows(false)
+
         setContentView(R.layout.activity_main)
+
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
 
         prefs = Prefs(this)
         prefs.initializeDefaultsIfNeeded()
@@ -38,18 +65,27 @@ class MainActivity : AppCompatActivity() {
 
         loadWallpaper()
         ensurePermissions()
-        ensureNotificationAccess()
     }
 
     override fun onResume() {
         super.onResume()
+        registerReceiver(receiver, IntentFilter("com.beackers.dumbhome.NOTIFICATIONS_UPDATED"))
         loadWallpaper()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        unregisterReceiver(receiver)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (shade.visibility == View.VISIBLE && keyCode == KeyEvent.KEYCODE_BACK) {
             shade.visibility = View.GONE
             return true
+        }
+
+        if (shade.visibility == View.VISIBLE && keyCode != KeyEvent.KEYCODE_BACK) {
+            return super.onKeyDown(keyCode, event)
         }
 
         if (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
@@ -67,13 +103,13 @@ class MainActivity : AppCompatActivity() {
             else -> null
         }
         if (shortcut != null) {
-            runShortcut(shortcut)
+            runShortcut(shortcut, keyCode)
             return true
         }
         return super.onKeyDown(keyCode, event)
     }
 
-    private fun runShortcut(action: ShortcutAction) {
+    private fun runShortcut(action: ShortcutAction, keyCode: Int) {
         when (action) {
             ShortcutAction.OPEN_NOTIFICATIONS -> toggleNotifications()
             ShortcutAction.OPEN_SETTINGS_APP -> {
@@ -85,6 +121,35 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent(this, SettingsActivity::class.java))
             }
             ShortcutAction.OPEN_APP_LAUNCHER -> showAppLauncher()
+            ShortcutAction.OPEN_ACTIVITY -> {
+                val prefKey = when (keyCode) {
+                    KeyEvent.KEYCODE_F11 -> Prefs.KEY_F11
+                    KeyEvent.KEYCODE_MENU -> Prefs.KEY_MENU
+                    KeyEvent.KEYCODE_DPAD_UP -> Prefs.KEY_UP
+                    KeyEvent.KEYCODE_DPAD_DOWN -> Prefs.KEY_DOWN
+                    KeyEvent.KEYCODE_DPAD_LEFT -> Prefs.KEY_LEFT
+                    KeyEvent.KEYCODE_DPAD_RIGHT -> Prefs.KEY_RIGHT
+                    else -> null
+                }
+                val packageName = prefKey?.let { prefs.getShortcutApp(it) }
+                if (packageName != null) {
+                  val intent = packageManager.getLaunchIntentForPackage(packageName)
+                  intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                  if (intent != null) {
+                    startActivity(intent)
+                  } else {
+                    Toast.makeText(this, "App not found", Toast.LENGTH_SHORT).show()
+                  }
+                }
+            }
+            ShortcutAction.OPEN_ASSISTANT -> {
+                val intent = Intent(Intent.ACTION_ASSIST)
+                startActivity(intent)
+            }
+            ShortcutAction.OPEN_CAMERA -> {
+                val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+                startActivity(intent)
+            }
             ShortcutAction.NONE -> Unit
         }
     }
@@ -94,30 +159,27 @@ class MainActivity : AppCompatActivity() {
             shade.visibility = View.GONE
             return
         }
-        val rows = NotificationStore.list().map {
-            "${it.packageName}: ${it.title} ${it.text}".trim()
-        }.ifEmpty { listOf("No notifications. Enable notification access in system settings.") }
-        notificationList.adapter = SimpleTextAdapter(rows)
+        if (!hasNotificationAccess()) {
+          requestNotificationsPermissions()
+          return
+        }
+        val rows = NotificationStore.rows(this)
+          .ifEmpty { listOf(NotificationRow(
+            key = "",
+            appName = "",
+            title = "",
+            text = "All caught up :)",
+            intent = null
+          )) }
+        notificationList.adapter = NotificationAdapter(rows)
         shade.visibility = View.VISIBLE
         shade.requestFocus()
+        return
     }
 
     private fun showAppLauncher() {
-        val pm = packageManager
-        val intent = Intent(Intent.ACTION_MAIN, null).addCategory(Intent.CATEGORY_LAUNCHER)
-        val apps = pm.queryIntentActivities(intent, 0).sortedBy { it.loadLabel(pm).toString().lowercase() }
-        val labels = apps.map { it.loadLabel(pm).toString() }
-
-        AlertDialog.Builder(this)
-            .setTitle("Launch app")
-            .setItems(labels.toTypedArray()) { _, which ->
-                val pkg = apps[which].activityInfo.packageName
-                pm.getLaunchIntentForPackage(pkg)?.let { launchIntent ->
-                    startActivity(launchIntent)
-                }
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+        startActivity(Intent(this, LauncherActivity::class.java))
+        return
     }
 
     private fun loadWallpaper() {
@@ -135,51 +197,25 @@ class MainActivity : AppCompatActivity() {
         if (permissions.isNotEmpty()) {
             requestPermissions(permissions.toTypedArray(), 11)
         }
+        return
     }
 
-    private fun ensureNotificationAccess() {
-        if (hasNotificationListenerAccess() || hasAccessibilityNotificationAccess()) {
-            return
-        }
-
-        val listenerIntent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-        if (listenerIntent.resolveActivity(packageManager) != null) {
-            Toast.makeText(this, "Enable DumbHome notification access.", Toast.LENGTH_LONG).show()
-            startActivity(listenerIntent)
-            return
-        }
-
-        val accessibilityIntent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-        if (accessibilityIntent.resolveActivity(packageManager) != null) {
-            Toast.makeText(
-                this,
-                "Enable DumbHome Notification Accessibility service to read notifications.",
-                Toast.LENGTH_LONG
-            ).show()
-            startActivity(accessibilityIntent)
-        }
+    private fun hasNotificationAccess(): Boolean {
+      val enabled = Settings.Secure.getString(
+        contentResolver,
+        "enabled_notification_listeners"
+      ) ?: return false
+      return enabled.contains(packageName)
     }
 
-    private fun hasNotificationListenerAccess(): Boolean {
-        val listeners = Settings.Secure.getString(contentResolver, "enabled_notification_listeners") ?: return false
-        return listeners.contains(packageName)
-    }
-
-    private fun hasAccessibilityNotificationAccess(): Boolean {
-        val enabled = Settings.Secure.getInt(contentResolver, Settings.Secure.ACCESSIBILITY_ENABLED, 0) == 1
-        if (!enabled) {
-            return false
-        }
-
-        val enabledServices = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES) ?: return false
-        val expectedService = TextUtils.SimpleStringSplitter(':')
-        expectedService.setString(enabledServices)
-        val target = "${packageName}/${com.beackers.dumbhome.notifications.DumbNotificationAccessibilityService::class.java.name}"
-        while (expectedService.hasNext()) {
-            if (expectedService.next().equals(target, ignoreCase = true)) {
-                return true
-            }
-        }
-        return false
+    private fun requestNotificationsPermissions() {
+      AlertDialog.Builder(this)
+        .setTitle("DumbHome is requesting permissions")
+        .setMessage("DumbHome is requestiong access to read your notifications. \nDumbHome does not collect or share your information.")
+        .setPositiveButton("Open settings", { _, _ ->
+      startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        })
+        .setNegativeButton("Cancel", null)
+        .show()
     }
 }

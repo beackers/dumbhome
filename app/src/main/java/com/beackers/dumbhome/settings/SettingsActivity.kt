@@ -10,8 +10,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
+import com.beackers.dumbhome.launcher.LauncherActivity
+
 class SettingsActivity : AppCompatActivity() {
     private lateinit var prefs: Prefs
+    private var currentPrefKey: String? = null
     private lateinit var list: RecyclerView
     private lateinit var adapter: SimpleTextAdapter
     private val rows = mutableListOf<String>()
@@ -39,6 +42,18 @@ class SettingsActivity : AppCompatActivity() {
         list.adapter = adapter
 
         refreshRows()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == 100 && resultCode == RESULT_OK) {
+          val packageName = data?.getStringExtra("package") ?: return
+          val key = currentPrefKey ?: return
+          prefs.setShortcut(key, ShortcutAction.OPEN_ACTIVITY)
+          prefs.setShortcutApp(key, packageName)
+          refreshRows()
+      }
     }
 
     private fun refreshRows() {
@@ -72,9 +87,20 @@ class SettingsActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("Shortcut action")
             .setItems(actions.map { it.displayName }.toTypedArray()) { _, which ->
-                prefs.setShortcut(prefKey, actions[which])
-                refreshRows()
+                if (actions[which] == ShortcutAction.OPEN_ACTIVITY) {
+                    currentPrefKey = prefKey
+                    pickApp(prefKey)
+                } else {
+                    prefs.setShortcut(prefKey, actions[which])
+                    refreshRows()
+                }
             }
             .show()
+    }
+
+    private fun pickApp(prefKey: String) {
+        val intent = Intent(this, LauncherActivity::class.java)
+        intent.putExtra("pick_mode", true)
+        startActivityForResult(intent, 100)
     }
 }
