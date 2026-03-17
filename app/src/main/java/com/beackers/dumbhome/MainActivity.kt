@@ -36,6 +36,7 @@ import com.beackers.dumbhome.launcher.LauncherActivity
 import java.util.Locale
 import java.util.TimeZone
 import java.util.Date
+import java.text.SimpleDateFormat
 
 class MainActivity : AppCompatActivity() {
     private lateinit var prefs: Prefs
@@ -58,7 +59,7 @@ class MainActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
 
     private val utcFmt = SimpleDateFormat("HH:mm:ss 'UTC'", Locale.US).apply {
-      timeZone = TimeZone.getTimeZone("UTC")
+        this.timeZone = TimeZone.getTimeZone("UTC")
     }
     private val clockRunnable = object : Runnable {
       override fun run() {
