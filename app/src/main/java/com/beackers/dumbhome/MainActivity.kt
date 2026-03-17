@@ -5,8 +5,11 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.KeyEvent
 import android.view.View
+import android.widget.TextView
 import android.widget.ImageView
 import android.app.PendingIntent          
 import android.provider.Settings
@@ -14,6 +17,7 @@ import android.provider.MediaStore
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.IntentFilter
+import android.text.format.DateFormat
 
 import androidx.activity.result.contract.ActivityResultContracts
 import android.text.TextUtils
@@ -29,24 +33,50 @@ import com.beackers.dumbhome.notifications.NotificationRow
 import com.beackers.dumbhome.notifications.NotificationAdapter
 import com.beackers.dumbhome.launcher.LauncherActivity
 
+import java.util.Locale
+import java.util.TimeZone
+import java.util.Date
 
 class MainActivity : AppCompatActivity() {
     private lateinit var prefs: Prefs
     private lateinit var wallpaper: ImageView
     private lateinit var shade: View
+    private lateinit var clockView: TextView
+    private lateinit var utcView: TextView
+    private lateinit var dateView: TextView
     private lateinit var notificationList: RecyclerView
     private var receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
+            // if adding summary,
+            // always update summary.
+            // update shade live if it's open.
             if (shade.visibility == View.VISIBLE) {
                 notificationList.adapter = NotificationAdapter(NotificationStore.rows(this@MainActivity))
             }
         }
     }
+    private val handler = Handler(Looper.getMainLooper())
+
+    private val utcFmt = SimpleDateFormat("HH:mm:ss 'UTC'", Locale.US).apply {
+      timeZone = TimeZone.getTimeZone("UTC")
+    }
+    private val clockRunnable = object : Runnable {
+      override fun run() {
+        val now = Date()
+        val time = DateFormat.format("HH:mm:ss", now)
+        val date = DateFormat.format("EEE, MMM d yyyy", now)
+        val utc = utcFmt.format(Date())
+
+        clockView.text = time
+        utcView.text = utc
+        dateView.text = date
+        val delay = 1000 - (System.currentTimeMillis() % 1000)
+        handler.postDelayed(this, delay)
+      }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        var window = getWindow()
 
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
         window.setDecorFitsSystemWindows(false)
@@ -62,20 +92,26 @@ class MainActivity : AppCompatActivity() {
         shade = findViewById(R.id.notificationShade)
         notificationList = findViewById(R.id.notificationList)
         notificationList.layoutManager = LinearLayoutManager(this)
+        clockView = findViewById(R.id.clockText)
+        utcView = findViewById(R.id.utcText)
+        dateView = findViewById(R.id.dateText)
 
         loadWallpaper()
         ensurePermissions()
+
     }
 
     override fun onResume() {
         super.onResume()
         registerReceiver(receiver, IntentFilter("com.beackers.dumbhome.NOTIFICATIONS_UPDATED"))
         loadWallpaper()
+        handler.post(clockRunnable)
     }
 
     override fun onPause() {
         super.onPause()
         unregisterReceiver(receiver)
+        handler.removeCallbacks(clockRunnable)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {

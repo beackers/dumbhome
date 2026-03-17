@@ -12,6 +12,53 @@
         android:scaleType="centerCrop" />
 
     <LinearLayout
+      android:id="@+id/infoLayout"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="vertical"
+      android:gravity="center_horizontal"
+      android:layout_gravity="top"
+      android:paddingTop="32dp" >
+
+    <TextView
+      android:id="@+id/clockText"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:gravity="center_horizontal"
+      android:textColor="#FFFFFF"
+      android:shadowColor="#80000000"
+      android:shadowDx="0"
+      android:shadowDy="2"
+      android:shadowRadius="4"
+      android:textSize="27sp" />
+
+    <TextView
+      android:id="@+id/utcText"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:gravity="center_horizontal"
+      android:textColor="#FFFFFF"
+      android:shadowColor="#80000000"
+      android:shadowDx="0"
+      android:shadowDy="2"
+      android:shadowRadius="4"
+      android:textSize="17sp" />
+
+    <TextView
+      android:id="@+id/dateText"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:gravity="center_horizontal"
+      android:textColor="#FFFFFF"
+      android:shadowColor="#80000000"
+      android:shadowDx="0"
+      android:shadowDy="2"
+      android:shadowRadius="4"
+      android:textSize="23sp" />
+
+    </LinearLayout>
+
+    <LinearLayout
         android:id="@+id/notificationShade"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
