@@ -116,6 +116,8 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent(this, SettingsActivity::class.java))
             }
             ShortcutAction.OPEN_APP_LAUNCHER -> showAppLauncher()
+            ShortcutAction.OPEN_ACTIVITY -> Unit
+            ShortcutAction.OPEN_ASSISTANT -> Unit
             ShortcutAction.NONE -> Unit
         }
     }

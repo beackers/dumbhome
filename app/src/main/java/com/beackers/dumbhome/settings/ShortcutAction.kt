@@ -5,6 +5,8 @@ enum class ShortcutAction(val displayName: String) {
     OPEN_SETTINGS_APP("Open Android Settings"),
     OPEN_DUMBHOME_SETTINGS("Open DumbHome settings"),
     OPEN_APP_LAUNCHER("Open app launcher"),
+    OPEN_ACTIVITY("Open an app"),
+    OPEN_ASSISTANT("Open default assistant"),
     NONE("Do nothing");
 
     companion object {
