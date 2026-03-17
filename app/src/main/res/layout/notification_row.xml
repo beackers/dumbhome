@@ -5,5 +5,7 @@
     android:padding="12dp"
     android:textSize="14sp"
     android:textColor="#FFFFFF"
+    android:background="@drawable/row_bg"
     android:focusable="true"
+    android:focusableInTouchMode="true"
     android:clickable="true"/>

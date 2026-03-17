@@ -84,6 +84,10 @@ class MainActivity : AppCompatActivity() {
             return true
         }
 
+        if (shade.visibility == View.VISIBLE && keyCode != KeyEvent.KEYCODE_BACK) {
+            return super.onKeyDown(keyCode, event)
+        }
+
         if (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
             showAppLauncher()
             return true
