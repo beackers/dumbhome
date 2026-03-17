@@ -30,7 +30,7 @@
       android:shadowDx="0"
       android:shadowDy="2"
       android:shadowRadius="4"
-      android:textSize="27sp" />
+      android:textSize="35sp" />
 
     <TextView
       android:id="@+id/utcText"
@@ -42,7 +42,7 @@
       android:shadowDx="0"
       android:shadowDy="2"
       android:shadowRadius="4"
-      android:textSize="17sp" />
+      android:textSize="23sp" />
 
     <TextView
       android:id="@+id/dateText"
@@ -54,7 +54,7 @@
       android:shadowDx="0"
       android:shadowDy="2"
       android:shadowRadius="4"
-      android:textSize="23sp" />
+      android:textSize="29sp" />
 
     </LinearLayout>
 

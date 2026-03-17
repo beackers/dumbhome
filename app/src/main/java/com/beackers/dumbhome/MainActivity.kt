@@ -45,6 +45,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var clockView: TextView
     private lateinit var utcView: TextView
     private lateinit var dateView: TextView
+
+    private var cellLevel: Int? = null
+    private var cellDbm: Int? = null
+    private var cellType: String = ""
+    private var wifiSsid: String? = null
+    private var wifiDbm: Int? = null
+
     private lateinit var notificationList: RecyclerView
     private var receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -99,7 +106,6 @@ class MainActivity : AppCompatActivity() {
 
         loadWallpaper()
         ensurePermissions()
-
     }
 
     override fun onResume() {
@@ -121,7 +127,11 @@ class MainActivity : AppCompatActivity() {
             return true
         }
 
-        if (shade.visibility == View.VISIBLE && keyCode != KeyEvent.KEYCODE_BACK) {
+        if (shade.visibility == View.VISIBLE && keyCode == KeyEvent.KEYCODE_MENU) {
+            return true
+        }
+
+        if (shade.visibility == View.VISIBLE && !(keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_MENU) {
             return super.onKeyDown(keyCode, event)
         }
 
