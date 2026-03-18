@@ -33,6 +33,7 @@ class NotificationAdapter(
 
         holder.view.setOnLongClickListener {
             DumbNotificationListener.instance?.clearNotification(row.key)
+            return true
         }
     }
 }

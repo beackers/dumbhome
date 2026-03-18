@@ -31,6 +31,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.beackers.dumbhome.notifications.NotificationStore
 import com.beackers.dumbhome.notifications.NotificationRow
 import com.beackers.dumbhome.notifications.NotificationAdapter
+import com.beackers.dumbhome.notifications.DumbNotificationListener
 import com.beackers.dumbhome.launcher.LauncherActivity
 
 import java.util.Locale
