@@ -128,6 +128,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (shade.visibility == View.VISIBLE && keyCode == KeyEvent.KEYCODE_MENU) {
+            DumbNotificationListener.instance?.clearAll()
             return true
         }
 

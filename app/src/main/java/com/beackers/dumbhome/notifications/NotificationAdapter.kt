@@ -5,6 +5,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.beackers.dumbhome.R
+import com.beackers.dumbhome.notifications.DumbNotificationListener
 
 class NotificationAdapter(
     private val rows: List<NotificationRow>
@@ -28,6 +29,10 @@ class NotificationAdapter(
 
         holder.view.setOnClickListener {
             row.intent?.send()
+        }
+
+        holder.view.setOnLongClickListener {
+            DumbNotificationListener.instance?.clearNotification(row.key)
         }
     }
 }

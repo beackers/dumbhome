@@ -6,6 +6,11 @@ import android.content.Intent
 
 class DumbNotificationListener : NotificationListenerService() {
 
+    override fun onCreate() {
+        super.onCreate()
+        instance = this
+    }
+
     override fun onListenerConnected() {
         refresh()
     }
@@ -21,5 +26,19 @@ class DumbNotificationListener : NotificationListenerService() {
     private fun refresh() {
         NotificationStore.update(activeNotifications ?: emptyArray())
         sendBroadcast(Intent("com.beackers.dumbhome.NOTIFICATIONS_UPDATED"))
+    }
+    
+    fun clearNotification(key: String) {
+        cancelNotification(key)
+        refresh()
+    }
+
+    fun clearAll() {
+        cancelAllNotifications()
+        refresh()
+    }
+
+    companion object {
+        var instance: DumbNotificationListener? = null
     }
 }
