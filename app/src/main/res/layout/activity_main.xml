@@ -17,8 +17,8 @@
       android:layout_height="wrap_content"
       android:orientation="vertical"
       android:gravity="center_horizontal"
-      android:layout_gravity="top"
-      android:paddingTop="40dp" >
+      android:layout_gravity="bottom"
+      android:paddingBottom="32" >
 
     <TextView
       android:id="@+id/clockText"
@@ -30,7 +30,7 @@
       android:shadowDx="0"
       android:shadowDy="2"
       android:shadowRadius="4"
-      android:textSize="43sp" />
+      android:textSize="37sp" />
 
     <TextView
       android:id="@+id/utcText"
@@ -42,7 +42,7 @@
       android:shadowDx="0"
       android:shadowDy="2"
       android:shadowRadius="4"
-      android:textSize="30sp" />
+      android:textSize="27sp" />
 
     <TextView
       android:id="@+id/dateText"
@@ -54,7 +54,7 @@
       android:shadowDx="0"
       android:shadowDy="2"
       android:shadowRadius="4"
-      android:textSize="37sp" />
+      android:textSize="27sp" />
 
     </LinearLayout>
 
