@@ -12,6 +12,8 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.beackers.dumbhome.R
 
 class OpenAppsActivity : AppCompatActivity() {
@@ -20,6 +22,12 @@ class OpenAppsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_open_apps)
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { v, insets ->
+          val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+          v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+          insets
+        }
 
         recycler = findViewById(R.id.openAppsList)
         recycler.layoutManager = LinearLayoutManager(this)
