@@ -9,6 +9,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.KeyEvent
 import android.view.View
+import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.ImageView
 import android.app.PendingIntent          
@@ -112,7 +113,7 @@ class MainActivity : AppCompatActivity() {
         // focus when unscrollable
         notificationList.isFocusable = true
         notificationList.isFocusableInTouchMode = true
-        notficationList.descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
+        notificationList.descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
         notificationList.overScrollMode = View.OVER_SCROLL_ALWAYS
         notificationList.setOnFocusChangeListener { _, hasFocus ->
           if (hasFocus && notificationList.childCount > 0) {
