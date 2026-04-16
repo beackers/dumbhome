@@ -1,19 +1,22 @@
 package com.beackers.dumbhome.launcher
 
-import android.Manifest
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.content.pm.PackageManager
 import android.view.KeyEvent
 
 import com.beackers.dumbhome.R
+import com.beackers.dumbhome.openapps.OpenAppsActivity
 
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 class LauncherActivity : AppCompatActivity() {
+  companion object {
+    private const val OPEN_APPS_SENTINEL = "__open_apps__"
+  }
+
   private lateinit var recycler: RecyclerView
   private lateinit var apps: List<AppEntry>
 
@@ -26,13 +29,16 @@ class LauncherActivity : AppCompatActivity() {
     setContentView(R.layout.activity_launcher)
 
     recycler = findViewById<RecyclerView>(R.id.appList)
-    apps = getLaunchableApps()
+    val pickMode = intent.getBooleanExtra("pick_mode", false)
+    apps = getLaunchableApps(includeOpenApps = !pickMode)
     buildLetterIndex()
     recycler.layoutManager = LinearLayoutManager(this)
 
-    val pickMode = intent.getBooleanExtra("pick_mode", false)
     recycler.adapter = AppLauncherAdapter(apps) { app ->
-        if (pickMode) {
+        if (app.packageName == OPEN_APPS_SENTINEL) {
+            startActivity(Intent(this, OpenAppsActivity::class.java))
+            finish()
+        } else if (pickMode) {
             val result = Intent().putExtra("package", app.packageName)
             setResult(RESULT_OK, result)
             finish()
@@ -56,10 +62,10 @@ class LauncherActivity : AppCompatActivity() {
     return super.onKeyDown(keyCode, event)
   }
 
-  private fun getLaunchableApps(): List<AppEntry> {
+  private fun getLaunchableApps(includeOpenApps: Boolean): List<AppEntry> {
     val pm = packageManager
     val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
-    return packages.mapNotNull { app ->
+    val launchableApps = packages.mapNotNull { app ->
       val launchIntent = pm.getLaunchIntentForPackage(app.packageName)
       if (launchIntent != null) {
         AppEntry(
@@ -68,6 +74,12 @@ class LauncherActivity : AppCompatActivity() {
         )
       } else null
     }.sortedBy { it.label.lowercase() }
+
+    return if (includeOpenApps) {
+      listOf(AppEntry(label = "Open apps in memory", packageName = OPEN_APPS_SENTINEL)) + launchableApps
+    } else {
+      launchableApps
+    }
   }
 
   private fun buildLetterIndex() {

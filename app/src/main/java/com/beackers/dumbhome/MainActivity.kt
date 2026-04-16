@@ -33,6 +33,7 @@ import com.beackers.dumbhome.notifications.NotificationRow
 import com.beackers.dumbhome.notifications.NotificationAdapter
 import com.beackers.dumbhome.notifications.DumbNotificationListener
 import com.beackers.dumbhome.launcher.LauncherActivity
+import com.beackers.dumbhome.openapps.OpenAppsActivity
 
 import java.util.Locale
 import java.util.TimeZone
@@ -170,6 +171,7 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent(this, SettingsActivity::class.java))
             }
             ShortcutAction.OPEN_APP_LAUNCHER -> showAppLauncher()
+            ShortcutAction.OPEN_OPEN_APPS -> startActivity(Intent(this, OpenAppsActivity::class.java))
             ShortcutAction.OPEN_ACTIVITY -> {
                 val prefKey = when (keyCode) {
                     KeyEvent.KEYCODE_F11 -> Prefs.KEY_F11
