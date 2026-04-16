@@ -58,5 +58,9 @@
         app:layout_constraintBottom_toBottomOf="@id/centerIcon"
         android:layout_marginStart="40dp"
         android:background="@drawable/icon_plate"/>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#66000000" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
