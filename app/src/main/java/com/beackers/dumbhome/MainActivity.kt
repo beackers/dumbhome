@@ -5,8 +5,11 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.KeyEvent
 import android.view.View
+import android.widget.TextView
 import android.widget.ImageView
 import android.app.PendingIntent          
 import android.provider.Settings
@@ -14,6 +17,7 @@ import android.provider.MediaStore
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.IntentFilter
+import android.text.format.DateFormat
 
 import androidx.activity.result.contract.ActivityResultContracts
 import android.text.TextUtils
@@ -27,26 +31,62 @@ import androidx.recyclerview.widget.RecyclerView
 import com.beackers.dumbhome.notifications.NotificationStore
 import com.beackers.dumbhome.notifications.NotificationRow
 import com.beackers.dumbhome.notifications.NotificationAdapter
+import com.beackers.dumbhome.notifications.DumbNotificationListener
 import com.beackers.dumbhome.launcher.LauncherActivity
+import com.beackers.dumbhome.openapps.OpenAppsActivity
 
+import java.util.Locale
+import java.util.TimeZone
+import java.util.Date
+import java.text.SimpleDateFormat
 
 class MainActivity : AppCompatActivity() {
     private lateinit var prefs: Prefs
     private lateinit var wallpaper: ImageView
     private lateinit var shade: View
+    private lateinit var clockView: TextView
+    private lateinit var utcView: TextView
+    private lateinit var dateView: TextView
+
+    private var cellLevel: Int? = null
+    private var cellDbm: Int? = null
+    private var cellType: String = ""
+    private var wifiSsid: String? = null
+    private var wifiDbm: Int? = null
+
     private lateinit var notificationList: RecyclerView
     private var receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
+            // if adding summary,
+            // always update summary.
+            // update shade live if it's open.
             if (shade.visibility == View.VISIBLE) {
                 notificationList.adapter = NotificationAdapter(NotificationStore.rows(this@MainActivity))
             }
         }
     }
+    private val handler = Handler(Looper.getMainLooper())
+
+    private val utcFmt = SimpleDateFormat("HH:mm:ss 'UTC'", Locale.US).apply {
+        this.timeZone = TimeZone.getTimeZone("UTC")
+    }
+    private val clockRunnable = object : Runnable {
+      override fun run() {
+        val now = Date()
+        val time = DateFormat.format("HH:mm:ss", now)
+        val date = DateFormat.format("EEE, MMM d yyyy", now)
+        val utc = utcFmt.format(Date())
+
+        clockView.text = time
+        utcView.text = utc
+        dateView.text = date
+        val delay = 1000 - (System.currentTimeMillis() % 1000)
+        handler.postDelayed(this, delay)
+      }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        var window = getWindow()
 
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
         window.setDecorFitsSystemWindows(false)
@@ -62,6 +102,9 @@ class MainActivity : AppCompatActivity() {
         shade = findViewById(R.id.notificationShade)
         notificationList = findViewById(R.id.notificationList)
         notificationList.layoutManager = LinearLayoutManager(this)
+        clockView = findViewById(R.id.clockText)
+        utcView = findViewById(R.id.utcText)
+        dateView = findViewById(R.id.dateText)
 
         loadWallpaper()
         ensurePermissions()
@@ -71,11 +114,13 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         registerReceiver(receiver, IntentFilter("com.beackers.dumbhome.NOTIFICATIONS_UPDATED"))
         loadWallpaper()
+        handler.post(clockRunnable)
     }
 
     override fun onPause() {
         super.onPause()
         unregisterReceiver(receiver)
+        handler.removeCallbacks(clockRunnable)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -84,7 +129,12 @@ class MainActivity : AppCompatActivity() {
             return true
         }
 
-        if (shade.visibility == View.VISIBLE && keyCode != KeyEvent.KEYCODE_BACK) {
+        if (shade.visibility == View.VISIBLE && keyCode == KeyEvent.KEYCODE_MENU) {
+            DumbNotificationListener.instance?.clearAll()
+            return true
+        }
+
+        if (shade.visibility == View.VISIBLE && (keyCode != KeyEvent.KEYCODE_BACK && keyCode != KeyEvent.KEYCODE_MENU)) {
             return super.onKeyDown(keyCode, event)
         }
 
@@ -121,6 +171,7 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent(this, SettingsActivity::class.java))
             }
             ShortcutAction.OPEN_APP_LAUNCHER -> showAppLauncher()
+            ShortcutAction.OPEN_OPEN_APPS -> startActivity(Intent(this, OpenAppsActivity::class.java))
             ShortcutAction.OPEN_ACTIVITY -> {
                 val prefKey = when (keyCode) {
                     KeyEvent.KEYCODE_F11 -> Prefs.KEY_F11
