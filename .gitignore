@@ -1,5 +1,6 @@
-# The java Symlink
+# The symlinks
 /java
+/asmr
 
 # Gradle files
 .gradle/

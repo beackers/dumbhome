@@ -1,0 +1,21 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="220dp"
+    android:height="220dp"
+    android:viewportWidth="220"
+    android:viewportHeight="220">
+
+    <!-- vertical bar -->
+    <path
+        android:fillColor="#22FFFFFF"
+        android:pathData="M90,10 h40 v200 h-40 z"/>
+
+    <!-- horizontal bar -->
+    <path
+        android:fillColor="#22FFFFFF"
+        android:pathData="M10,90 h200 v40 h-200 z"/>
+
+    <!-- center circle -->
+    <path
+        android:fillColor="#33FFFFFF"
+        android:pathData="M110,110 m-28,0 a28,28 0 1,0 56,0 a28,28 0 1,0 -56,0"/>
+</vector>
