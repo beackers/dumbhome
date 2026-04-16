@@ -23,11 +23,13 @@ class OpenAppsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_open_apps)
 
+        /* Problem that didn't exist
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { v, insets ->
           val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
           v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
           insets
         }
+        */
 
         recycler = findViewById(R.id.openAppsList)
         recycler.layoutManager = LinearLayoutManager(this)
@@ -65,9 +67,11 @@ class OpenAppsActivity : AppCompatActivity() {
 
         val lastUsedByPackage = usageStats.associate { it.packageName to it.lastTimeUsed }
 
-        val runningPackages = activityManager.runningAppProcesses
-            .orEmpty()
-            .flatMap { it.pkgList?.toList().orEmpty() }
+        val recentCutoff = now - (30L * 60L * 1000L) // 30 minutes
+
+        val runningPackages = usageStats
+            .filter { it.lastTimeUsed >= recentCutoff }
+            .map { it.packageName }
             .toSet()
 
         val pm = packageManager
