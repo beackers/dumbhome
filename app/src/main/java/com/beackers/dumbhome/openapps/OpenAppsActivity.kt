@@ -66,11 +66,12 @@ class OpenAppsActivity : AppCompatActivity() {
 
   override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
     val app = when (keyCode) {
-      KeyEvent.KEYCODE_ENTER -> center
-      KeyEvent.KEYCODE_RIGHT -> right
-      KeyEvent.KEYCODE_LEFT -> left
-      KeyEvent.KEYCODE_DOWN -> down
-      KeyEvent.KEYCODE_UP -> up
+      KeyEvent.KEYCODE_ENTER,
+      KeyEvent.KEYCODE_DPAD_CENTER -> center
+      KeyEvent.KEYCODE_DPAD_RIGHT -> right
+      KeyEvent.KEYCODE_DPAD_LEFT -> left
+      KeyEvent.KEYCODE_DPAD_DOWN -> down
+      KeyEvent.KEYCODE_DPAD_UP -> up
       else -> null
     }
     app?.let {
@@ -81,7 +82,7 @@ class OpenAppsActivity : AppCompatActivity() {
     return super.onKeyDown(keyCode, event)
   }
 
-  fun getTopRecentApps(context: Context, limit: Int = 5): List<RecentApp> {
+  private fun getTopRecentApps(context: Context, limit: Int = 5): List<RecentApp> {
     val usm = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
     val now = System.currentTimeMillis()
 
