@@ -13,11 +13,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import android.graphics.Bitmap
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.beackers.dumbhome.R
 import com.beackers.dumbhome.databinding.ActivityOpenAppsBinding
+import com.beackers.dumbhome.WallpaperStorage
 
 class OpenAppsActivity : AppCompatActivity() {
   private lateinit var binding: ActivityOpenAppsBinding
@@ -31,6 +33,9 @@ class OpenAppsActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     binding = ActivityOpenAppsBinding.inflate(layoutInflater)
     setContentView(binding.root)
+
+    val wallpaper = getWallpaper()
+    binding.openAppsLayout.background = wallpaper?
   }
 
   override fun onResume() {
@@ -123,6 +128,10 @@ class OpenAppsActivity : AppCompatActivity() {
       packageName
     )
     return mode == AppOpsManager.MODE_ALLOWED
+  }
+
+  private fun getWallpaper(): Bitmap?  {
+    return WallpaperStorage.load(this)
   }
 }
 
