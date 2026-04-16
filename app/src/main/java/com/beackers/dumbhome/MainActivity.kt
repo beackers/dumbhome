@@ -108,6 +108,18 @@ class MainActivity : AppCompatActivity() {
         shade = findViewById(R.id.notificationShade)
         notificationList = findViewById(R.id.notificationList)
         notificationList.layoutManager = LinearLayoutManager(this)
+
+        // focus when unscrollable
+        notificationList.isFocusable = true
+        notificationList.isFocusableInTouchMode = true
+        notficationList.descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
+        notificationList.overScrollMode = View.OVER_SCROLL_ALWAYS
+        notificationList.setOnFocusChangeListener { _, hasFocus ->
+          if (hasFocus && notificationList.childCount > 0) {
+            notificationList.getChildAt(0).requestFocus()
+          }
+        }
+
         clockView = findViewById(R.id.clockText)
         utcView = findViewById(R.id.utcText)
         dateView = findViewById(R.id.dateText)
@@ -230,7 +242,11 @@ class MainActivity : AppCompatActivity() {
           )) }
         notificationList.adapter = NotificationAdapter(rows)
         shade.visibility = View.VISIBLE
-        shade.requestFocus()
+        notificationList.post {
+          if (notificationList.childCount > 0) {
+            notificationList.getChildAt(0).requestFocus()
+          }
+        }
         return
     }
 
@@ -268,7 +284,7 @@ class MainActivity : AppCompatActivity() {
     private fun requestNotificationsPermissions() {
       AlertDialog.Builder(this)
         .setTitle("DumbHome is requesting permissions")
-        .setMessage("DumbHome is requestiong access to read your notifications. \nDumbHome does not collect or share your information.")
+        .setMessage("DumbHome is requesting access to read your notifications. \nDumbHome does not collect or share your information. \n To allow notification access, click 'Open settings' and tap DumbHome, then select Allowed and return home.")
         .setPositiveButton("Open settings", { _, _ ->
       startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         })
