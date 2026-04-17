@@ -34,8 +34,10 @@ class OpenAppsActivity : AppCompatActivity() {
     binding = ActivityOpenAppsBinding.inflate(layoutInflater)
     setContentView(binding.root)
 
-    val wallpaper = getWallpaper()
-    binding.openAppsLayout.background = wallpaper?
+    val wallpaper = loadSavedWallpaper()
+    wallpaper?.let {
+      binding.openAppsLayout.background = BitmapDrawable(resources, it)
+    }
   }
 
   override fun onResume() {
@@ -130,7 +132,7 @@ class OpenAppsActivity : AppCompatActivity() {
     return mode == AppOpsManager.MODE_ALLOWED
   }
 
-  private fun getWallpaper(): Bitmap?  {
+  private fun loadSavedWallpaper(): Bitmap?  {
     return WallpaperStorage.load(this)
   }
 }
