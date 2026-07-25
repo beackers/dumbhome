@@ -55,6 +55,9 @@ class MainActivity : AppCompatActivity() {
     private var wifiSsid: String? = null
     private var wifiDbm: Int? = null
 
+    private var ninePressCount = 0
+    private var lastNinePressTime = 0L
+
     private lateinit var notificationList: RecyclerView
     private var receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -169,6 +172,7 @@ class MainActivity : AppCompatActivity() {
             KeyEvent.KEYCODE_DPAD_DOWN -> prefs.getShortcut(Prefs.KEY_DOWN)
             KeyEvent.KEYCODE_DPAD_LEFT -> prefs.getShortcut(Prefs.KEY_LEFT)
             KeyEvent.KEYCODE_DPAD_RIGHT -> prefs.getShortcut(Prefs.KEY_RIGHT)
+            KeyEvent.KEYCODE_9 -> stepToEmergencyDial()
             else -> null
         }
         if (shortcut != null) {
@@ -268,6 +272,9 @@ class MainActivity : AppCompatActivity() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             permissions += Manifest.permission.READ_EXTERNAL_STORAGE
         }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+            permissions += Manifest.permission.CALL_PHONE
+        }
         if (permissions.isNotEmpty()) {
             requestPermissions(permissions.toTypedArray(), 11)
         }
@@ -291,5 +298,11 @@ class MainActivity : AppCompatActivity() {
         })
         .setNegativeButton("Cancel", null)
         .show()
+    }
+
+    private fun stepToEmergencyDial() {
+      // determine if 9 press "counts"
+      // count it or return
+      // if count is 5=< dial
     }
 }
