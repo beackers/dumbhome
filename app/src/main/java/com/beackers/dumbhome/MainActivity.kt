@@ -12,6 +12,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.ImageView
+import android.media.session.MediaController
+import android.media.session.MediaSessionManager
 import android.app.PendingIntent          
 import android.provider.Settings
 import android.provider.MediaStore
@@ -48,6 +50,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var clockView: TextView
     private lateinit var utcView: TextView
     private lateinit var dateView: TextView
+    private lateinit var lockScreen: View
+    private lateinit var lockBackground: ImageView
+    private lateinit var lockNowPlaying: TextView
+    private lateinit var lockMusicIcon: TextView
+    private lateinit var lockPrompt: TextView
+    private lateinit var lockChallenge: TextView
+    private var lockChallengeStarted = false
+    private var dpadProgress = mutableListOf<String>()
+    private var pinProgress = ""
+    private var shouldLockOnResume = false
 
     private var cellLevel: Int? = null
     private var cellDbm: Int? = null
@@ -61,6 +73,10 @@ class MainActivity : AppCompatActivity() {
             // if adding summary,
             // always update summary.
             // update shade live if it's open.
+            if (intent?.action == Intent.ACTION_SCREEN_OFF) {
+                shouldLockOnResume = prefs.getLockStrength() != LockStrength.NONE
+                return
+            }
             if (shade.visibility == View.VISIBLE) {
                 notificationList.adapter = NotificationAdapter(NotificationStore.rows(this@MainActivity))
             }
@@ -124,6 +140,12 @@ class MainActivity : AppCompatActivity() {
         clockView = findViewById(R.id.clockText)
         utcView = findViewById(R.id.utcText)
         dateView = findViewById(R.id.dateText)
+        lockScreen = findViewById(R.id.lockScreen)
+        lockBackground = findViewById(R.id.lockBackgroundImage)
+        lockNowPlaying = findViewById(R.id.lockNowPlaying)
+        lockMusicIcon = findViewById(R.id.lockMusicIcon)
+        lockPrompt = findViewById(R.id.lockPrompt)
+        lockChallenge = findViewById(R.id.lockChallenge)
 
         loadWallpaper()
         ensurePermissions()
@@ -131,8 +153,16 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        registerReceiver(receiver, IntentFilter("com.beackers.dumbhome.NOTIFICATIONS_UPDATED"))
+        registerReceiver(receiver, IntentFilter().apply {
+            addAction("com.beackers.dumbhome.NOTIFICATIONS_UPDATED")
+            addAction(Intent.ACTION_SCREEN_OFF)
+        })
         loadWallpaper()
+        if (prefs.getLockStrength() == LockStrength.NONE) {
+            hideLockScreen()
+        } else if (shouldLockOnResume) {
+            showLockScreen()
+        }
         handler.post(clockRunnable)
     }
 
@@ -143,6 +173,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (lockScreen.visibility == View.VISIBLE) {
+            return handleLockKey(keyCode)
+        }
+
         if (shade.visibility == View.VISIBLE && keyCode == KeyEvent.KEYCODE_BACK) {
             shade.visibility = View.GONE
             return true
@@ -258,6 +292,91 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadWallpaper() {
         wallpaper.setImageBitmap(WallpaperStorage.load(this))
+    }
+
+    private fun showLockScreen() {
+        lockChallengeStarted = false
+        dpadProgress.clear()
+        pinProgress = ""
+        refreshLockBackground()
+        lockPrompt.text = "Press any button to unlock"
+        lockChallenge.visibility = View.GONE
+        lockScreen.visibility = View.VISIBLE
+        lockScreen.requestFocus()
+    }
+
+    private fun hideLockScreen() {
+        lockScreen.visibility = View.GONE
+        shouldLockOnResume = false
+    }
+
+    private fun refreshLockBackground() {
+        val media = currentMedia()
+        val art = if (prefs.useMediaArtOnLockScreen()) media?.metadata?.description?.iconBitmap else null
+        lockBackground.setImageBitmap(art ?: WallpaperStorage.load(this, WallpaperStorage.WallpaperTarget.LOCK) ?: WallpaperStorage.load(this))
+        val title = media?.metadata?.description?.title?.toString().orEmpty()
+        val subtitle = media?.metadata?.description?.subtitle?.toString().orEmpty()
+        val showMedia = prefs.useMediaArtOnLockScreen() && (title.isNotBlank() || subtitle.isNotBlank())
+        lockNowPlaying.text = listOf(title, subtitle).filter { it.isNotBlank() }.joinToString("\n")
+        lockNowPlaying.visibility = if (showMedia) View.VISIBLE else View.GONE
+        lockMusicIcon.visibility = if (prefs.useMediaArtOnLockScreen() && art == null) View.VISIBLE else View.GONE
+    }
+
+    private fun currentMedia(): MediaController? {
+        if (!hasNotificationAccess()) return null
+        val manager = getSystemService(MediaSessionManager::class.java)
+        return manager.getActiveSessions(android.content.ComponentName(this, DumbNotificationListener::class.java)).firstOrNull()
+    }
+
+    private fun handleLockKey(keyCode: Int): Boolean {
+        if (!lockChallengeStarted) {
+            lockChallengeStarted = true
+            lockChallenge.visibility = View.VISIBLE
+            lockPrompt.text = when (prefs.getLockStrength()) {
+                LockStrength.NONE -> "Unlocked"
+                LockStrength.DPAD_SEQUENCE -> "Enter D-pad sequence"
+                LockStrength.PIN -> "Enter PIN"
+            }
+            if (prefs.getLockStrength() == LockStrength.NONE) hideLockScreen()
+            return true
+        }
+        when (prefs.getLockStrength()) {
+            LockStrength.NONE -> hideLockScreen()
+            LockStrength.DPAD_SEQUENCE -> handleDpadChallenge(keyCode)
+            LockStrength.PIN -> handlePinChallenge(keyCode)
+        }
+        return true
+    }
+
+    private fun handleDpadChallenge(keyCode: Int) {
+        val token = when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP -> "↑"
+            KeyEvent.KEYCODE_DPAD_DOWN -> "↓"
+            KeyEvent.KEYCODE_DPAD_LEFT -> "←"
+            KeyEvent.KEYCODE_DPAD_RIGHT -> "→"
+            else -> null
+        } ?: return
+        dpadProgress += token
+        val expected = prefs.getLockDpadSequence().split(" ").filter { it.isNotBlank() }
+        lockChallenge.text = dpadProgress.joinToString(" ")
+        if (dpadProgress == expected) hideLockScreen()
+        if (expected.take(dpadProgress.size) != dpadProgress || dpadProgress.size > expected.size) {
+            dpadProgress.clear()
+            lockChallenge.text = "Try again"
+        }
+    }
+
+    private fun handlePinChallenge(keyCode: Int) {
+        val digit = keyCode - KeyEvent.KEYCODE_0
+        if (digit !in 0..9) return
+        pinProgress += digit.toString()
+        lockChallenge.text = "•".repeat(pinProgress.length)
+        val expected = prefs.getLockPin()
+        if (pinProgress == expected) hideLockScreen()
+        if (!expected.startsWith(pinProgress) || pinProgress.length > expected.length) {
+            pinProgress = ""
+            lockChallenge.text = "Try again"
+        }
     }
 
     private fun ensurePermissions() {

@@ -24,6 +24,9 @@ class WallpaperCropActivity : AppCompatActivity() {
         overlayView = findViewById(R.id.cropOverlay)
 
         val imageUri = intent.getParcelableExtra<Uri>(EXTRA_IMAGE_URI)
+        val target = WallpaperStorage.WallpaperTarget.valueOf(
+            intent.getStringExtra(EXTRA_TARGET) ?: WallpaperStorage.WallpaperTarget.HOME.name
+        )
         if (imageUri == null) {
             finish()
             return
@@ -45,7 +48,7 @@ class WallpaperCropActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.cancelCropButton).setOnClickListener { finish() }
-        findViewById<Button>(R.id.saveCropButton).setOnClickListener { saveCroppedWallpaper() }
+        findViewById<Button>(R.id.saveCropButton).setOnClickListener { saveCroppedWallpaper(target) }
     }
 
     override fun onDestroy() {
@@ -54,10 +57,10 @@ class WallpaperCropActivity : AppCompatActivity() {
         sourceBitmap = null
     }
 
-    private fun saveCroppedWallpaper() {
+    private fun saveCroppedWallpaper(target: WallpaperStorage.WallpaperTarget) {
         val source = sourceBitmap ?: return
         val cropped = cropImageView.createCroppedBitmap(source)
-        WallpaperStorage.save(this, cropped)
+        WallpaperStorage.save(this, cropped, target)
         cropped.recycle()
         setResult(Activity.RESULT_OK)
         finish()
@@ -97,5 +100,6 @@ class WallpaperCropActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_IMAGE_URI = "extra_image_uri"
+        const val EXTRA_TARGET = "extra_target"
     }
 }

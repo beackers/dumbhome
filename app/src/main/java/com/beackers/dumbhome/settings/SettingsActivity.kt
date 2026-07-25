@@ -15,6 +15,7 @@ import com.beackers.dumbhome.launcher.LauncherActivity
 class SettingsActivity : AppCompatActivity() {
     private lateinit var prefs: Prefs
     private var currentPrefKey: String? = null
+    private var pendingWallpaperTarget = WallpaperStorage.WallpaperTarget.HOME
     private lateinit var list: RecyclerView
     private lateinit var adapter: SimpleTextAdapter
     private val rows = mutableListOf<String>()
@@ -23,11 +24,12 @@ class SettingsActivity : AppCompatActivity() {
         refreshRows()
     }
 
-    private val pickWallpaper = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
+    private val pickWallpaperLauncher = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
         if (uri == null) return@registerForActivityResult
         cropWallpaper.launch(
             Intent(this, WallpaperCropActivity::class.java)
-                .putExtra(WallpaperCropActivity.EXTRA_IMAGE_URI, uri),
+                .putExtra(WallpaperCropActivity.EXTRA_IMAGE_URI, uri)
+                .putExtra(WallpaperCropActivity.EXTRA_TARGET, pendingWallpaperTarget.name),
         )
     }
 
@@ -59,6 +61,11 @@ class SettingsActivity : AppCompatActivity() {
     private fun refreshRows() {
         rows.clear()
         rows += "Change home image"
+        rows += "Lock strength (${prefs.getLockStrength().displayName})"
+        rows += "Change lock image"
+        rows += "Lock media art (${if (prefs.useMediaArtOnLockScreen()) "on" else "off"})"
+        rows += "Set D-pad unlock sequence (${prefs.getLockDpadSequence()})"
+        rows += "Set PIN unlock (${"•".repeat(prefs.getLockPin().length)})"
         rows += "Configure F11 (${prefs.getShortcut(Prefs.KEY_F11).displayName})"
         rows += "Configure Menu (${prefs.getShortcut(Prefs.KEY_MENU).displayName})"
         rows += "Configure Up (${prefs.getShortcut(Prefs.KEY_UP).displayName})"
@@ -71,15 +78,74 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun onClickRow(position: Int) {
         when (position) {
-            0 -> pickWallpaper.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-            1 -> pickAction(Prefs.KEY_F11)
-            2 -> pickAction(Prefs.KEY_MENU)
-            3 -> pickAction(Prefs.KEY_UP)
-            4 -> pickAction(Prefs.KEY_DOWN)
-            5 -> pickAction(Prefs.KEY_LEFT)
-            6 -> pickAction(Prefs.KEY_RIGHT)
-            7 -> finish()
+            0 -> pickWallpaper(WallpaperStorage.WallpaperTarget.HOME)
+            1 -> pickLockStrength()
+            2 -> pickWallpaper(WallpaperStorage.WallpaperTarget.LOCK)
+            3 -> toggleLockMediaArt()
+            4 -> editDpadSequence()
+            5 -> editPin()
+            6 -> pickAction(Prefs.KEY_F11)
+            7 -> pickAction(Prefs.KEY_MENU)
+            8 -> pickAction(Prefs.KEY_UP)
+            9 -> pickAction(Prefs.KEY_DOWN)
+            10 -> pickAction(Prefs.KEY_LEFT)
+            11 -> pickAction(Prefs.KEY_RIGHT)
+            12 -> finish()
         }
+    }
+
+    private fun pickWallpaper(target: WallpaperStorage.WallpaperTarget) {
+        pendingWallpaperTarget = target
+        pickWallpaperLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+    }
+
+    private fun pickLockStrength() {
+        val strengths = LockStrength.entries
+        AlertDialog.Builder(this)
+            .setTitle("Lock strength")
+            .setItems(strengths.map { it.displayName }.toTypedArray()) { _, which ->
+                prefs.setLockStrength(strengths[which])
+                refreshRows()
+            }
+            .show()
+    }
+
+    private fun toggleLockMediaArt() {
+        prefs.setUseMediaArtOnLockScreen(!prefs.useMediaArtOnLockScreen())
+        refreshRows()
+    }
+
+    private fun editDpadSequence() {
+        val input = android.widget.EditText(this).apply {
+            setText(prefs.getLockDpadSequence())
+            hint = "Example: ↑ ↓ ← →"
+        }
+        AlertDialog.Builder(this)
+            .setTitle("D-pad sequence")
+            .setMessage("Use ↑ ↓ ← → tokens separated by spaces.")
+            .setView(input)
+            .setPositiveButton("Save") { _, _ ->
+                prefs.setLockDpadSequence(input.text.toString().ifBlank { Prefs.DEFAULT_DPAD_SEQUENCE })
+                refreshRows()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun editPin() {
+        val input = android.widget.EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+            setText(prefs.getLockPin())
+        }
+        AlertDialog.Builder(this)
+            .setTitle("PIN unlock")
+            .setView(input)
+            .setPositiveButton("Save") { _, _ ->
+                prefs.setLockPin(input.text.toString().ifBlank { Prefs.DEFAULT_PIN })
+                refreshRows()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun pickAction(prefKey: String) {

@@ -85,4 +85,72 @@
             android:layout_marginTop="12dp" />
     </LinearLayout>
 
+    <FrameLayout
+        android:id="@+id/lockScreen"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#FF000000"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/lockBackgroundImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="Lock wallpaper"
+            android:scaleType="centerCrop" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <TextView
+                android:id="@+id/lockMusicIcon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="♪"
+                android:textColor="@color/white"
+                android:textSize="64sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/lockNowPlaying"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="@color/white"
+                android:shadowColor="#80000000"
+                android:shadowDx="0"
+                android:shadowDy="2"
+                android:shadowRadius="4"
+                android:textSize="22sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/lockPrompt"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:text="Press any button to unlock"
+                android:textColor="@color/white"
+                android:textSize="20sp" />
+
+            <TextView
+                android:id="@+id/lockChallenge"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:visibility="gone" />
+        </LinearLayout>
+    </FrameLayout>
+
 </FrameLayout>
