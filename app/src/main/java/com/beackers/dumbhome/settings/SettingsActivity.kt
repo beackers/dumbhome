@@ -21,7 +21,7 @@ import com.beackers.dumbhome.WallpaperStorage
 class SettingsActivity : AppCompatActivity() {
     private lateinit var prefs: Prefs
     private var currentPrefKey: String? = null
-    private var binding: ActivitySettingsBinding
+    private lateinit var binding: ActivitySettingsBinding
     private lateinit var list: RecyclerView
     private lateinit var adapter: SimpleTextAdapter
     private val rows = mutableListOf<String>()
