@@ -18,6 +18,7 @@ import android.provider.MediaStore
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.IntentFilter
+import android.os.SystemClock
 import android.text.format.DateFormat
 
 import androidx.activity.result.contract.ActivityResultContracts
@@ -54,6 +55,9 @@ class MainActivity : AppCompatActivity() {
     private var cellType: String = ""
     private var wifiSsid: String? = null
     private var wifiDbm: Int? = null
+
+    private var ninePressCount = 0
+    private var lastNinePressTime = 0L
 
     private lateinit var notificationList: RecyclerView
     private var receiver = object : BroadcastReceiver() {
@@ -169,6 +173,7 @@ class MainActivity : AppCompatActivity() {
             KeyEvent.KEYCODE_DPAD_DOWN -> prefs.getShortcut(Prefs.KEY_DOWN)
             KeyEvent.KEYCODE_DPAD_LEFT -> prefs.getShortcut(Prefs.KEY_LEFT)
             KeyEvent.KEYCODE_DPAD_RIGHT -> prefs.getShortcut(Prefs.KEY_RIGHT)
+            KeyEvent.KEYCODE_9 -> stepToEmergencyDial()
             else -> null
         }
         if (shortcut != null) {
@@ -268,6 +273,9 @@ class MainActivity : AppCompatActivity() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             permissions += Manifest.permission.READ_EXTERNAL_STORAGE
         }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
+            permissions += Manifest.permission.CALL_PHONE
+        }
         if (permissions.isNotEmpty()) {
             requestPermissions(permissions.toTypedArray(), 11)
         }
@@ -291,5 +299,27 @@ class MainActivity : AppCompatActivity() {
         })
         .setNegativeButton("Cancel", null)
         .show()
+    }
+
+    private fun stepToEmergencyDial(): ShortcutAction? {
+      val now = SystemClock.elapsedRealtime()
+      ninePressCount = if (now - lastNinePressTime <= EMERGENCY_SEQUENCE_WINDOW_MILLIS) {
+        ninePressCount + 1
+      } else {
+        1
+      }
+      lastNinePressTime = now
+
+      if (ninePressCount >= EMERGENCY_SEQUENCE_PRESS_COUNT) {
+        ninePressCount = 0
+        lastNinePressTime = 0L
+        startActivity(Intent(this, ChallengeActivity::class.java))
+      }
+      return null
+    }
+
+    companion object {
+      private const val EMERGENCY_SEQUENCE_PRESS_COUNT = 5
+      private const val EMERGENCY_SEQUENCE_WINDOW_MILLIS = 5_000L
     }
 }

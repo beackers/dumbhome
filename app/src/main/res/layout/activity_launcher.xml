@@ -1,7 +1,14 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/launcherLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#EE000000">
+
+    <!-- Shade the wallpaper -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#66000000" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/appList"
