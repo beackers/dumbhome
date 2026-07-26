@@ -4,9 +4,14 @@ import android.content.Intent
 import android.os.Bundle
 import android.content.pm.PackageManager
 import android.view.KeyEvent
+import android.view.View
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
 
 import com.beackers.dumbhome.R
+import com.beackers.dumbhome.WallpaperStorage
 import com.beackers.dumbhome.openapps.OpenAppsActivity
+import com.beackers.dumbhome.databinding.ActivityLauncherBinding
 
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -17,6 +22,7 @@ class LauncherActivity : AppCompatActivity() {
     private const val OPEN_APPS_SENTINEL = "__open_apps__"
   }
 
+  private lateinit var binding: ActivityLauncherBinding
   private lateinit var recycler: RecyclerView
   private lateinit var apps: List<AppEntry>
 
@@ -25,11 +31,17 @@ class LauncherActivity : AppCompatActivity() {
   private var cycleOffset: Int = 0
 
   override fun onCreate(savedInstanceState: Bundle?) {
+    binding = ActivityLauncherBinding.inflate(layoutInflater)
     super.onCreate(savedInstanceState)
     window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
     window.setDecorFitsSystemWindows(false)
-    setContentView(R.layout.activity_launcher)
+    setContentView(binding.root)
     window.navigationBarColor = android.graphics.Color.TRANSPARENT
+
+    val wallpaper = loadSavedWallpaper()
+    wallpaper?.let {
+      binding.launcherLayout.background = BitmapDrawable(resources, it)
+    }
 
     recycler = findViewById<RecyclerView>(R.id.appList)
     val pickMode = intent.getBooleanExtra("pick_mode", false)
@@ -130,5 +142,9 @@ class LauncherActivity : AppCompatActivity() {
 
     (recycler.layoutManager as LinearLayoutManager)
       .scrollToPositionWithOffset(index, 0)
+  }
+
+  private fun loadSavedWallpaper(): Bitmap? {
+    return WallpaperStorage.load(this)
   }
 }

@@ -31,9 +31,12 @@ class OpenAppsActivity : AppCompatActivity() {
   private var down: RecentApp? = null
 
   override fun onCreate(savedInstanceState: Bundle?) {
+    window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+    window.setDecorFitsSystemWindows(false)
     super.onCreate(savedInstanceState)
     binding = ActivityOpenAppsBinding.inflate(layoutInflater)
     setContentView(binding.root)
+    window.navigationBarColor = android.graphics.Color.TRANSPARENT
 
     val wallpaper = loadSavedWallpaper()
     wallpaper?.let {
