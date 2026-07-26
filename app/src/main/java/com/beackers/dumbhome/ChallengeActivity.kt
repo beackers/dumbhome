@@ -23,7 +23,9 @@ class ChallengeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        window.setDecorFitsSystemWindows(false)
         setContentView(R.layout.activity_challenge)
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
 
         countdownNumber = findViewById(R.id.countdownNumber)
         countdownProgress = findViewById(R.id.countdownProgress)
@@ -79,6 +81,6 @@ class ChallengeActivity : AppCompatActivity() {
     companion object {
         private const val CHALLENGE_MILLIS = 5_000L
         private const val TICK_MILLIS = 100L
-        private const val EMERGENCY_NUMBER_URI = "tel:8042221111"
+        private const val EMERGENCY_NUMBER_URI = "tel:8041112222"
     }
 }
