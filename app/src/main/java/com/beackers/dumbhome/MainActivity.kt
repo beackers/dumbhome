@@ -18,6 +18,7 @@ import android.provider.MediaStore
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.IntentFilter
+import android.os.SystemClock
 import android.text.format.DateFormat
 
 import androidx.activity.result.contract.ActivityResultContracts
@@ -300,9 +301,25 @@ class MainActivity : AppCompatActivity() {
         .show()
     }
 
-    private fun stepToEmergencyDial() {
-      // determine if 9 press "counts"
-      // count it or return
-      // if count is 5=< dial
+    private fun stepToEmergencyDial(): ShortcutAction? {
+      val now = SystemClock.elapsedRealtime()
+      ninePressCount = if (now - lastNinePressTime <= EMERGENCY_SEQUENCE_WINDOW_MILLIS) {
+        ninePressCount + 1
+      } else {
+        1
+      }
+      lastNinePressTime = now
+
+      if (ninePressCount >= EMERGENCY_SEQUENCE_PRESS_COUNT) {
+        ninePressCount = 0
+        lastNinePressTime = 0L
+        startActivity(Intent(this, ChallengeActivity::class.java))
+      }
+      return null
+    }
+
+    companion object {
+      private const val EMERGENCY_SEQUENCE_PRESS_COUNT = 5
+      private const val EMERGENCY_SEQUENCE_WINDOW_MILLIS = 5_000L
     }
 }
