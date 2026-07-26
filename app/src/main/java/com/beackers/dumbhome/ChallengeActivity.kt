@@ -81,6 +81,6 @@ class ChallengeActivity : AppCompatActivity() {
     companion object {
         private const val CHALLENGE_MILLIS = 5_000L
         private const val TICK_MILLIS = 100L
-        private const val EMERGENCY_NUMBER_URI = "tel:8041112222"
+        private const val EMERGENCY_NUMBER_URI = "tel:911"
     }
 }
