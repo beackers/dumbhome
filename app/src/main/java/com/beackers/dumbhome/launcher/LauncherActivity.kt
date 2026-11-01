@@ -1,7 +1,6 @@
 package com.beackers.dumbhome.launcher
 
 import android.os.Bundle
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.view.KeyEvent
 import android.view.View
