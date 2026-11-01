@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.telecom.TelecomManager
 import android.os.CountDownTimer
 import android.view.KeyEvent
 import android.view.View
@@ -69,12 +70,27 @@ class ChallengeActivity : AppCompatActivity() {
     }
 
     private fun dialEmergency() {
-        val callIntent = Intent(Intent.ACTION_CALL, Uri.parse(EMERGENCY_NUMBER_URI))
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
-            startActivity(callIntent)
-        } else {
-            startActivity(Intent(Intent.ACTION_DIAL, Uri.parse(EMERGENCY_NUMBER_URI)))
+        val address = Uri.parse(EMERGENCY_NUMBER_URI)
+
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.CALL_PHONE
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            try {
+                val telecomManager = getSystemService(TELECOM_SERVICE) as TelecomManager
+                telecomManager.placeCall(address, Bundle())
+                finish()
+                return
+            } catch (_: SecurityException) {
+                // Fall through to the dialer fallback below.
+            } catch (_: IllegalArgumentException) {
+                // Fall through to the dialer fallback below.
+            }
         }
+
+        // If Telecom cannot place the call, open the phone app with 911 ready.
+        startActivity(Intent(Intent.ACTION_DIAL, address))
         finish()
     }
 
