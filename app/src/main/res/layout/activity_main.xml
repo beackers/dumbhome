@@ -1,4 +1,5 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -12,49 +13,49 @@
         android:scaleType="centerCrop" />
 
     <LinearLayout
-      android:id="@+id/infoLayout"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:orientation="vertical"
-      android:gravity="center_horizontal"
-      android:layout_gravity="bottom"
-      android:paddingBottom="26dp" >
+        android:id="@+id/infoLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:layout_gravity="bottom"
+        android:paddingBottom="26dp">
 
-    <TextView
-      android:id="@+id/clockText"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:gravity="center_horizontal"
-      android:textColor="#FFFFFF"
-      android:shadowColor="#80000000"
-      android:shadowDx="0"
-      android:shadowDy="2"
-      android:shadowRadius="4"
-      android:textSize="37sp" />
+        <TextView
+            android:id="@+id/clockText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:textColor="#FFFFFF"
+            android:shadowColor="#80000000"
+            android:shadowDx="0"
+            android:shadowDy="2"
+            android:shadowRadius="4"
+            android:textSize="37sp" />
 
-    <TextView
-      android:id="@+id/utcText"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:gravity="center_horizontal"
-      android:textColor="#FFFFFF"
-      android:shadowColor="#80000000"
-      android:shadowDx="0"
-      android:shadowDy="2"
-      android:shadowRadius="4"
-      android:textSize="27sp" />
+        <TextView
+            android:id="@+id/utcText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:textColor="#FFFFFF"
+            android:shadowColor="#80000000"
+            android:shadowDx="0"
+            android:shadowDy="2"
+            android:shadowRadius="4"
+            android:textSize="27sp" />
 
-    <TextView
-      android:id="@+id/dateText"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:gravity="center_horizontal"
-      android:textColor="#FFFFFF"
-      android:shadowColor="#80000000"
-      android:shadowDx="0"
-      android:shadowDy="2"
-      android:shadowRadius="4"
-      android:textSize="27sp" />
+        <TextView
+            android:id="@+id/dateText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:textColor="#FFFFFF"
+            android:shadowColor="#80000000"
+            android:shadowDx="0"
+            android:shadowDy="2"
+            android:shadowRadius="4"
+            android:textSize="27sp" />
 
     </LinearLayout>
 
@@ -84,5 +85,67 @@
             android:layout_weight="1"
             android:layout_marginTop="12dp" />
     </LinearLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/recentAppsShade"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#66000000"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/recentCenterIcon"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:background="@drawable/icon_plate"
+            android:focusable="true"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <ImageView
+            android:id="@+id/recentUpIcon"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:background="@drawable/icon_plate"
+            app:layout_constraintBottom_toTopOf="@id/recentCenterIcon"
+            app:layout_constraintStart_toStartOf="@id/recentCenterIcon"
+            app:layout_constraintEnd_toEndOf="@id/recentCenterIcon"
+            android:layout_marginBottom="40dp" />
+
+        <ImageView
+            android:id="@+id/recentDownIcon"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:background="@drawable/icon_plate"
+            app:layout_constraintTop_toBottomOf="@id/recentCenterIcon"
+            app:layout_constraintStart_toStartOf="@id/recentCenterIcon"
+            app:layout_constraintEnd_toEndOf="@id/recentCenterIcon"
+            android:layout_marginTop="40dp" />
+
+        <ImageView
+            android:id="@+id/recentLeftIcon"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:background="@drawable/icon_plate"
+            app:layout_constraintEnd_toStartOf="@id/recentCenterIcon"
+            app:layout_constraintTop_toTopOf="@id/recentCenterIcon"
+            app:layout_constraintBottom_toBottomOf="@id/recentCenterIcon"
+            android:layout_marginEnd="40dp" />
+
+        <ImageView
+            android:id="@+id/recentRightIcon"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:background="@drawable/icon_plate"
+            app:layout_constraintStart_toEndOf="@id/recentCenterIcon"
+            app:layout_constraintTop_toTopOf="@id/recentCenterIcon"
+            app:layout_constraintBottom_toBottomOf="@id/recentCenterIcon"
+            android:layout_marginStart="40dp" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </FrameLayout>
