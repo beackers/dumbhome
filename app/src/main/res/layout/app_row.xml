@@ -1,12 +1,31 @@
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/appName"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/appRow"
     android:layout_width="match_parent"
     android:layout_height="48dp"
+    android:orientation="horizontal"
     android:gravity="center"
     android:background="@android:color/transparent"
     android:focusable="false"
-    android:focusableInTouchMode="false"
-    android:paddingStart="12dp"
-    android:paddingEnd="12dp"
-    android:textColor="@color/white"
-    android:textSize="18sp" />
+    android:focusableInTouchMode="false">
+
+    <ImageView
+        android:id="@+id/appIcon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginEnd="7dp"
+        android:scaleType="fitCenter"
+        android:contentDescription="@null" />
+
+    <TextView
+        android:id="@+id/appName"
+        android:layout_width="180dp"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:singleLine="true"
+        android:ellipsize="marquee"
+        android:marqueeRepeatLimit="marquee_forever"
+        android:scrollHorizontally="true"
+        android:textColor="@color/white"
+        android:textSize="17sp" />
+
+</LinearLayout>
