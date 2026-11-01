@@ -50,9 +50,11 @@ class NotificationAdapter(
                     row.intent.send()
                 } catch (_: Exception) {
                     // A stale PendingIntent is no more useful than no intent.
+                    onNotificationHandled(row.key)
                 }
+            } else {
+                onNotificationHandled(row.key)
             }
-            onNotificationHandled(row.key)
         }
 
         holder.container.setOnKeyListener { _, keyCode, event ->
