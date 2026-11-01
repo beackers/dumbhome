@@ -35,10 +35,6 @@
             android:exported="false" />
 
         <activity
-            android:name=".openapps.OpenAppsActivity"
-            android:exported="false" />
-
-        <activity
             android:name=".ChallengeActivity"
             android:excludeFromRecents="true"
             android:exported="false"
