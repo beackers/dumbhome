@@ -76,7 +76,7 @@ class MainActivity : AppCompatActivity() {
     private var receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (shade.visibility == View.VISIBLE) {
-                notificationList.adapter = NotificationAdapter(NotificationStore.rows(this@MainActivity))
+                refreshNotificationList()
             }
         }
     }
@@ -190,6 +190,7 @@ class MainActivity : AppCompatActivity() {
 
         if (shade.visibility == View.VISIBLE && keyCode == KeyEvent.KEYCODE_MENU) {
             DumbNotificationListener.instance?.clearAll()
+            refreshNotificationList()
             return true
         }
 
@@ -286,11 +287,27 @@ class MainActivity : AppCompatActivity() {
                     )
                 )
             }
-        notificationList.adapter = NotificationAdapter(rows)
+        notificationList.adapter = NotificationAdapter(rows) { key ->
+            DumbNotificationListener.instance?.clearNotification(key)
+        }
         shade.visibility = View.VISIBLE
+        focusFirstNotification()
+    }
+
+    private fun refreshNotificationList() {
+        val rows = NotificationStore.rows(this)
+        notificationList.adapter = NotificationAdapter(rows) { key ->
+            DumbNotificationListener.instance?.clearNotification(key)
+        }
+        focusFirstNotification()
+    }
+
+    private fun focusFirstNotification() {
         notificationList.post {
             if (notificationList.childCount > 0) {
                 notificationList.getChildAt(0).requestFocus()
+            } else {
+                notificationList.requestFocus()
             }
         }
     }
