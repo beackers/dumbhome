@@ -231,9 +231,9 @@ class LauncherActivity : AppCompatActivity() {
         LinearLayoutManager(this@LauncherActivity, VERTICAL, false) {
 
         private val itemSpacing = dp(52f)
-        private val horizontalRadius = dp(58f)
+        private val horizontalRadius = dp(150f)
         private val itemHeight = dp(48f)
-        private val maxAngle = Math.toRadians(27.0)
+        private val maxAngle = Math.toRadians(72.0)
 
         override fun onLayoutChildren(recycler: RecyclerView.Recycler, state: RecyclerView.State) {
             super.onLayoutChildren(recycler, state)
@@ -270,8 +270,10 @@ class LauncherActivity : AppCompatActivity() {
                 val clamped = distance.coerceIn(-2.5f, 2.5f)
                 val angle = clamped * maxAngle / 2.0
 
-                // Each item follows a shallow circular arc. Text itself never rotates.
-                child.translationX = (kotlin.math.sin(angle) * horizontalRadius).toFloat()
+                // The list follows the visible left half of a wheel.
+                // Both ends recede toward the left; the text itself never rotates.
+                child.translationX =
+                    (-horizontalRadius * (1.0 - kotlin.math.cos(angle))).toFloat()
 
                 val absDistance = kotlin.math.abs(clamped)
                 child.scaleX = 1f - (absDistance * 0.07f)
