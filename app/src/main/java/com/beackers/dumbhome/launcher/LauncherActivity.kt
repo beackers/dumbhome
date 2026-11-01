@@ -15,7 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
-class LauncherActivity : AppCompatActivity {
+class LauncherActivity : AppCompatActivity() {
   private lateinit var binding: ActivityLauncherBinding
   private lateinit var recycler: RecyclerView
   private lateinit var apps: List<AppEntry>
