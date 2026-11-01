@@ -1,11 +1,11 @@
 package com.beackers.dumbhome.notifications
 
-import android.service.notification.StatusBarNotification
 import android.content.Context
+import android.service.notification.StatusBarNotification
 import java.util.concurrent.CopyOnWriteArrayList
 
 object NotificationStore {
-  private val current = CopyOnWriteArrayList<StatusBarNotification>()
+    private val current = CopyOnWriteArrayList<StatusBarNotification>()
 
     fun update(all: Array<StatusBarNotification>) {
         current.clear()
@@ -13,29 +13,29 @@ object NotificationStore {
     }
 
     fun rows(context: Context): List<NotificationRow> {
-      return current.map { sbn ->
-        val extras = sbn.notification.extras
-        val title = extras.getCharSequence("android.title")?.toString() ?: ""
-        val text = extras.getCharSequence("android.text")?.toString()
-          ?: extras.getCharSequence("android.bigText")?.toString()
-          ?: ""
-        val pm = context.packageManager
-        val appName = try {
-            pm.getApplicationLabel(
-              pm.getApplicationInfo(
-                sbn.packageName, 0)
-              ).toString()
-            } catch (e: Exception) {
-              sbn.packageName
+        return current.map { sbn ->
+            val extras = sbn.notification.extras
+            val title = extras.getCharSequence("android.title")?.toString() ?: ""
+            val text = extras.getCharSequence("android.bigText")?.toString()
+                ?: extras.getCharSequence("android.text")?.toString()
+                ?: ""
+
+            val appName = try {
+                val pm = context.packageManager
+                pm.getApplicationLabel(
+                    pm.getApplicationInfo(sbn.packageName, 0)
+                ).toString()
+            } catch (_: Exception) {
+                sbn.packageName
             }
 
-        NotificationRow(
-          key = sbn.key,
-          appName = appName,
-          title = title,
-          text = text,
-          intent = sbn.notification.contentIntent
-        )
-      }
+            NotificationRow(
+                key = sbn.key,
+                appName = appName,
+                title = title,
+                text = text,
+                intent = sbn.notification.contentIntent
+            )
+        }
     }
 }
