@@ -19,12 +19,4 @@
         android:paddingTop="88dp"
         android:paddingBottom="88dp" />
 
-    <View
-        android:id="@+id/centerHighlight"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_gravity="center"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp" />
-
 </FrameLayout>
