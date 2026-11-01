@@ -6,10 +6,9 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
-import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
-import android.widget.FrameLayout
+import android.view.ViewGroup
 import android.widget.TextView
 
 import com.beackers.dumbhome.R
@@ -17,14 +16,18 @@ import com.beackers.dumbhome.WallpaperStorage
 import com.beackers.dumbhome.databinding.ActivityLauncherBinding
 
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.LinearSmoothScroller
+import androidx.recyclerview.widget.RecyclerView
 
 class LauncherActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLauncherBinding
-    private lateinit var wheel: FrameLayout
+    private lateinit var recycler: RecyclerView
     private lateinit var centerHighlight: View
     private lateinit var apps: List<AppEntry>
 
-    private val itemViews = mutableListOf<TextView>()
+    private lateinit var layoutManager: WheelLayoutManager
+
     private val letterIndex = mutableMapOf<Char, Int>()
     private var selectedIndex = 0
     private var lastKeyPressed: Int = -1
@@ -44,29 +47,39 @@ class LauncherActivity : AppCompatActivity() {
                 android.graphics.drawable.BitmapDrawable(resources, it)
         }
 
-        wheel = findViewById(R.id.appWheel)
+        recycler = findViewById(R.id.appList)
         centerHighlight = findViewById(R.id.centerHighlight)
 
         val pickMode = intent.getBooleanExtra("pick_mode", false)
         apps = getLaunchableApps()
         buildLetterIndex()
 
-        if (apps.isEmpty()) {
-            addItemView("No apps")
-        } else {
-            rebuildWheel()
+        layoutManager = WheelLayoutManager()
+        recycler.layoutManager = layoutManager
+        recycler.adapter = AppLauncherAdapter(apps) { app ->
+            if (pickMode) {
+                setResult(
+                    RESULT_OK,
+                    Intent().putExtra("package", app.packageName)
+                )
+                finish()
+            } else {
+                packageManager.getLaunchIntentForPackage(app.packageName)?.let {
+                    startActivity(it)
+                    finish()
+                }
+            }
         }
 
-        // Keep the selector visually centered while the app names move around it.
         centerHighlight.background = GradientDrawable().apply {
             cornerRadius = dp(10f)
             setColor(0xCC202020.toInt())
             setStroke(dp(1f).toInt(), 0x99FFFFFF.toInt())
         }
 
-        if (pickMode) {
-            centerHighlight.setOnClickListener {
-                launchSelected(pickMode)
+        recycler.post {
+            if (apps.isNotEmpty()) {
+                centerOnSelected(animated = false)
             }
         }
     }
@@ -158,73 +171,49 @@ class LauncherActivity : AppCompatActivity() {
         }
 
         selectedIndex = positions[cycleOffset]
-        rebuildWheel()
+        centerOnSelected(animated = true)
     }
 
     private fun moveSelection(delta: Int) {
         selectedIndex = (selectedIndex + delta).floorMod(apps.size)
         lastKeyPressed = -1
         cycleOffset = 0
-        rebuildWheel()
+        centerOnSelected(animated = true)
     }
 
-    private fun rebuildWheel() {
-        wheel.removeAllViews()
-        itemViews.clear()
+    private fun centerOnSelected(animated: Boolean) {
+        if (apps.isEmpty()) return
 
-        val visibleRadius = 2
-        for (distance in -visibleRadius..visibleRadius) {
-            val index = (selectedIndex + distance).floorMod(apps.size)
-            val app = apps[index]
-
-            val view = TextView(this).apply {
-                text = app.label
-                gravity = Gravity.CENTER
-                setTextColor(Color.WHITE)
-                typeface = if (distance == 0) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
-                textSize = if (distance == 0) 20f else 17f
-                maxLines = 1
-                ellipsize = android.text.TextUtils.TruncateAt.END
-                isFocusable = false
-            }
-
-            val params = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                dp(if (distance == 0) 56f else 48f).toInt()
+        if (!animated) {
+            layoutManager.scrollToPositionWithOffset(
+                selectedIndex,
+                (recycler.height - dp(48f).toInt()) / 2
             )
-            params.gravity = Gravity.CENTER
-            view.layoutParams = params
+            layoutManager.applyWheelTransforms()
+            return
+        }
 
-            val absDistance = kotlin.math.abs(distance)
-            view.translationY = dp(distance * 58f)
-            view.translationX = dp(absDistance * absDistance * 9f)
-            view.scaleX = 1f - (absDistance * 0.10f)
-            view.scaleY = 1f - (absDistance * 0.10f)
-            view.alpha = 1f - (absDistance * 0.23f)
+        val scroller = object : LinearSmoothScroller(this) {
+            override fun getVerticalSnapPreference(): Int = SNAP_TO_ANY
 
-            if (distance == 0) {
-                view.background = centerHighlight.background
-                view.background = GradientDrawable().apply {
-                    cornerRadius = dp(10f)
-                    setColor(0xCC202020.toInt())
-                    setStroke(dp(1f).toInt(), 0x99FFFFFF.toInt())
-                }
-                view.setPadding(dp(12f).toInt(), 0, dp(12f).toInt(), 0)
+            override fun calculateDtToFit(
+                viewStart: Int,
+                viewEnd: Int,
+                boxStart: Int,
+                boxEnd: Int,
+                snapPreference: Int
+            ): Int {
+                val viewCenter = (viewStart + viewEnd) / 2
+                val boxCenter = (boxStart + boxEnd) / 2
+                return boxCenter - viewCenter
             }
 
-            wheel.addView(view)
-            itemViews += view
+            override fun calculateTimeForScrolling(dx: Int): Int {
+                return 120
+            }
         }
-    }
-
-    private fun addItemView(text: String) {
-        val view = TextView(this).apply {
-            this.text = text
-            gravity = Gravity.CENTER
-            setTextColor(Color.WHITE)
-            textSize = 18f
-        }
-        wheel.addView(view)
+        scroller.targetPosition = selectedIndex
+        layoutManager.startSmoothScroll(scroller)
     }
 
     private fun launchSelected(pickMode: Boolean) {
@@ -250,4 +239,69 @@ class LauncherActivity : AppCompatActivity() {
 
     private fun Int.floorMod(modulus: Int): Int =
         ((this % modulus) + modulus) % modulus
+
+    private inner class WheelLayoutManager :
+        LinearLayoutManager(this@LauncherActivity, VERTICAL, false) {
+
+        private val itemSpacing = dp(52f)
+        private val horizontalRadius = dp(58f)
+        private val maxAngle = Math.toRadians(27.0)
+
+        override fun onLayoutChildren(recycler: RecyclerView.Recycler, state: RecyclerView.State) {
+            super.onLayoutChildren(recycler, state)
+            applyWheelTransforms()
+        }
+
+        override fun scrollVerticallyBy(
+            dy: Int,
+            recycler: RecyclerView.Recycler,
+            state: RecyclerView.State
+        ): Int {
+            val consumed = super.scrollVerticallyBy(dy, recycler, state)
+            applyWheelTransforms()
+            return consumed
+        }
+
+        fun applyWheelTransforms() {
+            val centerY = height / 2f
+
+            for (i in 0 until childCount) {
+                val child = getChildAt(i) ?: continue
+                val childCenterY = (getDecoratedTop(child) + getDecoratedBottom(child)) / 2f
+                val distance = (childCenterY - centerY) / itemSpacing
+
+                val clamped = distance.coerceIn(-2.5f, 2.5f)
+                val angle = clamped * maxAngle / 2.0
+
+                // Each item follows a shallow circular arc. Text itself never rotates.
+                child.translationX = (kotlin.math.sin(angle) * horizontalRadius).toFloat()
+
+                val absDistance = kotlin.math.abs(clamped)
+                child.scaleX = 1f - (absDistance * 0.07f)
+                child.scaleY = 1f - (absDistance * 0.07f)
+                child.alpha = (1f - absDistance * 0.20f).coerceAtLeast(0.25f)
+
+                val adapterPosition = getPosition(child)
+                val isSelected = adapterPosition == selectedIndex
+                if (isSelected) {
+                    child.scaleX = 1f
+                    child.scaleY = 1f
+                    child.alpha = 1f
+                    child.elevation = dp(4f)
+                    child.findViewById<TextView>(R.id.appName)?.apply {
+                        setTypeface(Typeface.DEFAULT, Typeface.BOLD)
+                        textSize = 20f
+                        gravity = android.view.Gravity.CENTER
+                    }
+                } else {
+                    child.elevation = 0f
+                    child.findViewById<TextView>(R.id.appName)?.apply {
+                        setTypeface(Typeface.DEFAULT, Typeface.NORMAL)
+                        textSize = 17f
+                        gravity = android.view.Gravity.CENTER
+                    }
+                }
+            }
+        }
+    }
 }
