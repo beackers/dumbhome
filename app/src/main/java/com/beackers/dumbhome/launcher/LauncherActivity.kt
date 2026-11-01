@@ -4,7 +4,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
-import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
@@ -23,7 +22,6 @@ import androidx.recyclerview.widget.RecyclerView
 class LauncherActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLauncherBinding
     private lateinit var recycler: RecyclerView
-    private lateinit var centerHighlight: View
     private lateinit var apps: List<AppEntry>
 
     private lateinit var layoutManager: WheelLayoutManager
@@ -48,8 +46,6 @@ class LauncherActivity : AppCompatActivity() {
         }
 
         recycler = findViewById(R.id.appList)
-        centerHighlight = findViewById(R.id.centerHighlight)
-
         val pickMode = intent.getBooleanExtra("pick_mode", false)
         apps = getLaunchableApps()
         buildLetterIndex()
@@ -69,12 +65,6 @@ class LauncherActivity : AppCompatActivity() {
                     finish()
                 }
             }
-        }
-
-        centerHighlight.background = GradientDrawable().apply {
-            cornerRadius = dp(10f)
-            setColor(0xCC202020.toInt())
-            setStroke(dp(1f).toInt(), 0x99FFFFFF.toInt())
         }
 
         recycler.post {
@@ -185,10 +175,7 @@ class LauncherActivity : AppCompatActivity() {
         if (apps.isEmpty()) return
 
         if (!animated) {
-            layoutManager.scrollToPositionWithOffset(
-                selectedIndex,
-                (recycler.height - dp(48f).toInt()) / 2
-            )
+            layoutManager.scrollToScreenCenter(selectedIndex)
             layoutManager.applyWheelTransforms()
             return
         }
@@ -245,6 +232,7 @@ class LauncherActivity : AppCompatActivity() {
 
         private val itemSpacing = dp(52f)
         private val horizontalRadius = dp(58f)
+        private val itemHeight = dp(48f)
         private val maxAngle = Math.toRadians(27.0)
 
         override fun onLayoutChildren(recycler: RecyclerView.Recycler, state: RecyclerView.State) {
@@ -260,6 +248,15 @@ class LauncherActivity : AppCompatActivity() {
             val consumed = super.scrollVerticallyBy(dy, recycler, state)
             applyWheelTransforms()
             return consumed
+        }
+
+        fun scrollToScreenCenter(position: Int) {
+            val location = IntArray(2)
+            recycler.getLocationOnScreen(location)
+            val screenCenterY = resources.displayMetrics.heightPixels / 2
+            val desiredTop = screenCenterY - location[1] - (itemHeight / 2f).toInt()
+            scrollToPositionWithOffset(position, desiredTop)
+            applyWheelTransforms()
         }
 
         fun applyWheelTransforms() {
