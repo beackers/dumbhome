@@ -282,23 +282,25 @@ class LauncherActivity : AppCompatActivity() {
 
                 val adapterPosition = getPosition(child)
                 val isSelected = adapterPosition == selectedIndex
+                val nameView = child.findViewById<TextView>(R.id.appName)
+                nameView.isSelected = isSelected
+                nameView.textSize = when {
+                    absDistance < 0.5f -> 20f
+                    absDistance < 1.5f -> 17f
+                    absDistance < 2.25f -> 14f
+                    else -> 12f
+                }
                 if (isSelected) {
                     child.scaleX = 1f
                     child.scaleY = 1f
                     child.alpha = 1f
                     child.elevation = dp(4f)
-                    child.findViewById<TextView>(R.id.appName)?.apply {
-                        setTypeface(Typeface.DEFAULT, Typeface.BOLD)
-                        textSize = 20f
-                        gravity = android.view.Gravity.CENTER
-                    }
+                    nameView.setTypeface(Typeface.DEFAULT, Typeface.BOLD)
+                    nameView.gravity = android.view.Gravity.CENTER_VERTICAL
                 } else {
                     child.elevation = 0f
-                    child.findViewById<TextView>(R.id.appName)?.apply {
-                        setTypeface(Typeface.DEFAULT, Typeface.NORMAL)
-                        textSize = 17f
-                        gravity = android.view.Gravity.CENTER
-                    }
+                    nameView.setTypeface(Typeface.DEFAULT, Typeface.NORMAL)
+                    nameView.gravity = android.view.Gravity.CENTER_VERTICAL
                 }
             }
         }
