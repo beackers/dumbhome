@@ -1,18 +1,14 @@
 package com.beackers.dumbhome
 
 import android.Manifest
+import android.app.AppOpsManager
+import android.app.usage.UsageStatsManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.KeyEvent
-import android.view.View
-import android.view.ViewGroup
-import android.widget.TextView
-import android.widget.ImageView
-import android.app.PendingIntent          
 import android.provider.Settings
 import android.provider.MediaStore
 import android.content.BroadcastReceiver
@@ -20,10 +16,15 @@ import android.content.Context
 import android.content.IntentFilter
 import android.os.SystemClock
 import android.text.format.DateFormat
+import android.view.KeyEvent
+import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
+import android.widget.ImageView
+import android.graphics.drawable.Drawable
+import android.widget.Toast
 
 import androidx.activity.result.contract.ActivityResultContracts
-import android.text.TextUtils
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -35,7 +36,6 @@ import com.beackers.dumbhome.notifications.NotificationRow
 import com.beackers.dumbhome.notifications.NotificationAdapter
 import com.beackers.dumbhome.notifications.DumbNotificationListener
 import com.beackers.dumbhome.launcher.LauncherActivity
-import com.beackers.dumbhome.openapps.OpenAppsActivity
 
 import java.util.Locale
 import java.util.TimeZone
@@ -46,6 +46,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var prefs: Prefs
     private lateinit var wallpaper: ImageView
     private lateinit var shade: View
+    private lateinit var recentAppsShade: View
     private lateinit var clockView: TextView
     private lateinit var utcView: TextView
     private lateinit var dateView: TextView
@@ -60,11 +61,20 @@ class MainActivity : AppCompatActivity() {
     private var lastNinePressTime = 0L
 
     private lateinit var notificationList: RecyclerView
+    private lateinit var recentCenterIcon: ImageView
+    private lateinit var recentLeftIcon: ImageView
+    private lateinit var recentRightIcon: ImageView
+    private lateinit var recentUpIcon: ImageView
+    private lateinit var recentDownIcon: ImageView
+
+    private var centerRecentApp: RecentApp? = null
+    private var leftRecentApp: RecentApp? = null
+    private var rightRecentApp: RecentApp? = null
+    private var upRecentApp: RecentApp? = null
+    private var downRecentApp: RecentApp? = null
+
     private var receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            // if adding summary,
-            // always update summary.
-            // update shade live if it's open.
             if (shade.visibility == View.VISIBLE) {
                 notificationList.adapter = NotificationAdapter(NotificationStore.rows(this@MainActivity))
             }
@@ -76,34 +86,28 @@ class MainActivity : AppCompatActivity() {
         this.timeZone = TimeZone.getTimeZone("UTC")
     }
     private val clockRunnable = object : Runnable {
-      override fun run() {
-        val now = Date()
-        val time = DateFormat.format("HH:mm:ss", now)
-        val date = DateFormat.format("EEE, MMM d yyyy", now)
-        val utc = utcFmt.format(Date())
+        override fun run() {
+            val now = Date()
+            val time = DateFormat.format("HH:mm:ss", now)
+            val date = DateFormat.format("EEE, MMM d yyyy", now)
+            val utc = utcFmt.format(Date())
 
-        clockView.text = time
-        utcView.text = utc
-        dateView.text = date
-        val delay = 1000 - (System.currentTimeMillis() % 1000)
-        handler.postDelayed(this, delay)
-      }
+            clockView.text = time
+            utcView.text = utc
+            dateView.text = date
+            val delay = 1000 - (System.currentTimeMillis() % 1000)
+            handler.postDelayed(this, delay)
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Keep these so the image draws
-        // behind the transparent nav/status
-        // bars.
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
         window.setDecorFitsSystemWindows(false)
 
         setContentView(R.layout.activity_main)
 
-        // actually make the nav bar transparent
-        // may need to add something to
-        // contrast the status bar
         window.navigationBarColor = android.graphics.Color.TRANSPARENT
 
         prefs = Prefs(this)
@@ -111,19 +115,25 @@ class MainActivity : AppCompatActivity() {
 
         wallpaper = findViewById(R.id.backgroundImage)
         shade = findViewById(R.id.notificationShade)
+        recentAppsShade = findViewById(R.id.recentAppsShade)
+
         notificationList = findViewById(R.id.notificationList)
         notificationList.layoutManager = LinearLayoutManager(this)
-
-        // focus when unscrollable
         notificationList.isFocusable = true
         notificationList.isFocusableInTouchMode = true
         notificationList.descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
         notificationList.overScrollMode = View.OVER_SCROLL_ALWAYS
         notificationList.setOnFocusChangeListener { _, hasFocus ->
-          if (hasFocus && notificationList.childCount > 0) {
-            notificationList.getChildAt(0).requestFocus()
-          }
+            if (hasFocus && notificationList.childCount > 0) {
+                notificationList.getChildAt(0).requestFocus()
+            }
         }
+
+        recentCenterIcon = findViewById(R.id.recentCenterIcon)
+        recentLeftIcon = findViewById(R.id.recentLeftIcon)
+        recentRightIcon = findViewById(R.id.recentRightIcon)
+        recentUpIcon = findViewById(R.id.recentUpIcon)
+        recentDownIcon = findViewById(R.id.recentDownIcon)
 
         clockView = findViewById(R.id.clockText)
         utcView = findViewById(R.id.utcText)
@@ -147,6 +157,32 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (recentAppsShade.visibility == View.VISIBLE) {
+            val app = when (keyCode) {
+                KeyEvent.KEYCODE_ENTER,
+                KeyEvent.KEYCODE_DPAD_CENTER -> centerRecentApp
+                KeyEvent.KEYCODE_DPAD_RIGHT -> rightRecentApp
+                KeyEvent.KEYCODE_DPAD_LEFT -> leftRecentApp
+                KeyEvent.KEYCODE_DPAD_DOWN -> downRecentApp
+                KeyEvent.KEYCODE_DPAD_UP -> upRecentApp
+                KeyEvent.KEYCODE_BACK,
+                KeyEvent.KEYCODE_MENU -> null
+                else -> return true
+            }
+
+            if (keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_MENU) {
+                recentAppsShade.visibility = View.GONE
+                return true
+            }
+
+            app?.let {
+                recentAppsShade.visibility = View.GONE
+                startActivity(it.intent)
+                return true
+            }
+            return true
+        }
+
         if (shade.visibility == View.VISIBLE && keyCode == KeyEvent.KEYCODE_BACK) {
             shade.visibility = View.GONE
             return true
@@ -157,7 +193,7 @@ class MainActivity : AppCompatActivity() {
             return true
         }
 
-        if (shade.visibility == View.VISIBLE && (keyCode != KeyEvent.KEYCODE_BACK && keyCode != KeyEvent.KEYCODE_MENU)) {
+        if (shade.visibility == View.VISIBLE) {
             return super.onKeyDown(keyCode, event)
         }
 
@@ -195,7 +231,7 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent(this, SettingsActivity::class.java))
             }
             ShortcutAction.OPEN_APP_LAUNCHER -> showAppLauncher()
-            ShortcutAction.OPEN_OPEN_APPS -> startActivity(Intent(this, OpenAppsActivity::class.java))
+            ShortcutAction.OPEN_OPEN_APPS -> toggleRecentApps()
             ShortcutAction.OPEN_ACTIVITY -> {
                 val prefKey = when (keyCode) {
                     KeyEvent.KEYCODE_F11 -> Prefs.KEY_F11
@@ -208,13 +244,13 @@ class MainActivity : AppCompatActivity() {
                 }
                 val packageName = prefKey?.let { prefs.getShortcutApp(it) }
                 if (packageName != null) {
-                  val intent = packageManager.getLaunchIntentForPackage(packageName)
-                  intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                  if (intent != null) {
-                    startActivity(intent)
-                  } else {
-                    Toast.makeText(this, "App not found", Toast.LENGTH_SHORT).show()
-                  }
+                    val intent = packageManager.getLaunchIntentForPackage(packageName)
+                    intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    if (intent != null) {
+                        startActivity(intent)
+                    } else {
+                        Toast.makeText(this, "App not found", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
             ShortcutAction.OPEN_ASSISTANT -> {
@@ -235,30 +271,109 @@ class MainActivity : AppCompatActivity() {
             return
         }
         if (!hasNotificationAccess()) {
-          requestNotificationsPermissions()
-          return
+            requestNotificationsPermissions()
+            return
         }
         val rows = NotificationStore.rows(this)
-          .ifEmpty { listOf(NotificationRow(
-            key = "",
-            appName = "",
-            title = "",
-            text = "All caught up :)",
-            intent = null
-          )) }
+            .ifEmpty {
+                listOf(
+                    NotificationRow(
+                        key = "",
+                        appName = "",
+                        title = "",
+                        text = "All caught up :)",
+                        intent = null
+                    )
+                )
+            }
         notificationList.adapter = NotificationAdapter(rows)
         shade.visibility = View.VISIBLE
         notificationList.post {
-          if (notificationList.childCount > 0) {
-            notificationList.getChildAt(0).requestFocus()
-          }
+            if (notificationList.childCount > 0) {
+                notificationList.getChildAt(0).requestFocus()
+            }
         }
-        return
+    }
+
+    private fun toggleRecentApps() {
+        if (recentAppsShade.visibility == View.VISIBLE) {
+            recentAppsShade.visibility = View.GONE
+            return
+        }
+
+        if (!hasUsagePermissions()) {
+            startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+            return
+        }
+
+        val apps = getTopRecentApps(this)
+        centerRecentApp = apps.getOrNull(0)
+        rightRecentApp = apps.getOrNull(1)
+        downRecentApp = apps.getOrNull(2)
+        leftRecentApp = apps.getOrNull(3)
+        upRecentApp = apps.getOrNull(4)
+
+        recentCenterIcon.setImageDrawable(centerRecentApp?.icon)
+        recentLeftIcon.setImageDrawable(leftRecentApp?.icon)
+        recentRightIcon.setImageDrawable(rightRecentApp?.icon)
+        recentUpIcon.setImageDrawable(upRecentApp?.icon)
+        recentDownIcon.setImageDrawable(downRecentApp?.icon)
+
+        recentCenterIcon.visibility = if (centerRecentApp != null) View.VISIBLE else View.INVISIBLE
+        recentLeftIcon.visibility = if (leftRecentApp != null) View.VISIBLE else View.INVISIBLE
+        recentRightIcon.visibility = if (rightRecentApp != null) View.VISIBLE else View.INVISIBLE
+        recentUpIcon.visibility = if (upRecentApp != null) View.VISIBLE else View.INVISIBLE
+        recentDownIcon.visibility = if (downRecentApp != null) View.VISIBLE else View.INVISIBLE
+
+        recentAppsShade.visibility = View.VISIBLE
+        recentCenterIcon.requestFocus()
+    }
+
+    private fun getTopRecentApps(context: Context, limit: Int = 5): List<RecentApp> {
+        val usm = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        val now = System.currentTimeMillis()
+
+        val stats = usm.queryUsageStats(
+            UsageStatsManager.INTERVAL_DAILY,
+            now - (6 * 60 * 60 * 1000),
+            now
+        ) ?: emptyList()
+
+        val pm = context.packageManager
+
+        return stats
+            .filter { it.lastTimeUsed > 0 }
+            .sortedByDescending { it.lastTimeUsed }
+            .mapNotNull { stat ->
+                if (stat.packageName == packageName) return@mapNotNull null
+
+                val intent = pm.getLaunchIntentForPackage(stat.packageName)
+                    ?: return@mapNotNull null
+
+                val info = pm.getApplicationInfo(stat.packageName, 0)
+
+                RecentApp(
+                    label = pm.getApplicationLabel(info).toString(),
+                    icon = pm.getApplicationIcon(info),
+                    intent = intent
+                )
+            }
+            .distinctBy { it.intent.component?.packageName }
+            .take(limit)
+    }
+
+    private fun hasUsagePermissions(): Boolean {
+        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val mode = appOps.unsafeCheckOpNoThrow(
+            AppOpsManager.OPSTR_GET_USAGE_STATS,
+            android.os.Process.myUid(),
+            packageName
+        )
+        return mode == AppOpsManager.MODE_ALLOWED
     }
 
     private fun showAppLauncher() {
         startActivity(Intent(this, LauncherActivity::class.java))
-        return
     }
 
     private fun loadWallpaper() {
@@ -279,47 +394,52 @@ class MainActivity : AppCompatActivity() {
         if (permissions.isNotEmpty()) {
             requestPermissions(permissions.toTypedArray(), 11)
         }
-        return
     }
 
     private fun hasNotificationAccess(): Boolean {
-      val enabled = Settings.Secure.getString(
-        contentResolver,
-        "enabled_notification_listeners"
-      ) ?: return false
-      return enabled.contains(packageName)
+        val enabled = Settings.Secure.getString(
+            contentResolver,
+            "enabled_notification_listeners"
+        ) ?: return false
+        return enabled.contains(packageName)
     }
 
     private fun requestNotificationsPermissions() {
-      AlertDialog.Builder(this)
-        .setTitle("DumbHome is requesting permissions")
-        .setMessage("DumbHome is requesting access to read your notifications. \nDumbHome does not collect or share your information. \n To allow notification access, click 'Open settings' and tap DumbHome, then select Allowed and return home.")
-        .setPositiveButton("Open settings", { _, _ ->
-      startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-        })
-        .setNegativeButton("Cancel", null)
-        .show()
+        AlertDialog.Builder(this)
+            .setTitle("DumbHome is requesting permissions")
+            .setMessage("DumbHome is requesting access to read your notifications. \nDumbHome does not collect or share your information. \n To allow notification access, click 'Open settings' and tap DumbHome, then select Allowed and return home.")
+            .setPositiveButton("Open settings") { _, _ ->
+                startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun stepToEmergencyDial(): ShortcutAction? {
-      val now = SystemClock.elapsedRealtime()
-      ninePressCount = if (now - lastNinePressTime <= EMERGENCY_SEQUENCE_WINDOW_MILLIS) {
-        ninePressCount + 1
-      } else {
-        1
-      }
-      lastNinePressTime = now
+        val now = SystemClock.elapsedRealtime()
+        ninePressCount = if (now - lastNinePressTime <= EMERGENCY_SEQUENCE_WINDOW_MILLIS) {
+            ninePressCount + 1
+        } else {
+            1
+        }
+        lastNinePressTime = now
 
-      if (ninePressCount >= EMERGENCY_SEQUENCE_PRESS_COUNT) {
-        ninePressCount = 0
-        lastNinePressTime = 0L
-        startActivity(Intent(this, ChallengeActivity::class.java))
-      }
-      return null
+        if (ninePressCount >= EMERGENCY_SEQUENCE_PRESS_COUNT) {
+            ninePressCount = 0
+            lastNinePressTime = 0L
+            startActivity(Intent(this, ChallengeActivity::class.java))
+        }
+        return null
     }
 
     companion object {
-      private const val EMERGENCY_SEQUENCE_PRESS_COUNT = 5
-      private const val EMERGENCY_SEQUENCE_WINDOW_MILLIS = 5_000L
+        private const val EMERGENCY_SEQUENCE_PRESS_COUNT = 5
+        private const val EMERGENCY_SEQUENCE_WINDOW_MILLIS = 5_000L
     }
 }
+
+private data class RecentApp(
+    val label: String,
+    val icon: Drawable,
+    val intent: Intent
+)
