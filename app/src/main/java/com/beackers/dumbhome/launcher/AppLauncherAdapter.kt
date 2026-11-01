@@ -4,6 +4,7 @@ import android.view.View
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.ImageView
 
 import com.beackers.dumbhome.R
 
@@ -15,6 +16,7 @@ class AppLauncherAdapter(
 ) : RecyclerView.Adapter<AppLauncherAdapter.Holder>() {
 
     class Holder(view: View) : RecyclerView.ViewHolder(view) {
+        val icon: ImageView = view.findViewById(R.id.appIcon)
         val name: TextView = view.findViewById(R.id.appName)
     }
 
@@ -29,6 +31,11 @@ class AppLauncherAdapter(
     override fun onBindViewHolder(holder: Holder, position: Int) {
         val app = apps[position]
         holder.name.text = app.label
+        holder.name.isSelected = false
+
+        holder.icon.setImageDrawable(
+            holder.itemView.context.packageManager.getApplicationIcon(app.packageName)
+        )
 
         holder.itemView.setOnClickListener {
             onLaunch(app)
