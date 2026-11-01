@@ -9,20 +9,22 @@
         android:layout_height="match_parent"
         android:background="#66000000" />
 
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/appList"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:paddingTop="88dp"
+        android:paddingBottom="88dp" />
+
     <View
         android:id="@+id/centerHighlight"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="48dp"
         android:layout_gravity="center"
-        android:layout_marginStart="20dp"
-        android:layout_marginEnd="20dp" />
-
-    <FrameLayout
-        android:id="@+id/appWheel"
-        android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:layout_gravity="center"
-        android:clipChildren="false"
-        android:clipToPadding="false" />
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp" />
 
 </FrameLayout>
