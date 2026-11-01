@@ -1,6 +1,5 @@
 package com.beackers.dumbhome.launcher
 
-import android.content.Intent
 import android.os.Bundle
 import android.content.pm.PackageManager
 import android.view.KeyEvent
@@ -10,18 +9,13 @@ import android.graphics.drawable.BitmapDrawable
 
 import com.beackers.dumbhome.R
 import com.beackers.dumbhome.WallpaperStorage
-import com.beackers.dumbhome.openapps.OpenAppsActivity
 import com.beackers.dumbhome.databinding.ActivityLauncherBinding
 
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
-class LauncherActivity : AppCompatActivity() {
-  companion object {
-    private const val OPEN_APPS_SENTINEL = "__open_apps__"
-  }
-
+class LauncherActivity : AppCompatActivity {
   private lateinit var binding: ActivityLauncherBinding
   private lateinit var recycler: RecyclerView
   private lateinit var apps: List<AppEntry>
@@ -45,15 +39,12 @@ class LauncherActivity : AppCompatActivity() {
 
     recycler = findViewById<RecyclerView>(R.id.appList)
     val pickMode = intent.getBooleanExtra("pick_mode", false)
-    apps = getLaunchableApps(includeOpenApps = !pickMode)
+    apps = getLaunchableApps()
     buildLetterIndex()
     recycler.layoutManager = LinearLayoutManager(this)
 
     recycler.adapter = AppLauncherAdapter(apps) { app ->
-        if (app.packageName == OPEN_APPS_SENTINEL) {
-            startActivity(Intent(this, OpenAppsActivity::class.java))
-            finish()
-        } else if (pickMode) {
+        if (pickMode) {
             val result = Intent().putExtra("package", app.packageName)
             setResult(RESULT_OK, result)
             finish()
@@ -77,10 +68,10 @@ class LauncherActivity : AppCompatActivity() {
     return super.onKeyDown(keyCode, event)
   }
 
-  private fun getLaunchableApps(includeOpenApps: Boolean): List<AppEntry> {
+  private fun getLaunchableApps(): List<AppEntry> {
     val pm = packageManager
     val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
-    val launchableApps = packages.mapNotNull { app ->
+    return packages.mapNotNull { app ->
       val launchIntent = pm.getLaunchIntentForPackage(app.packageName)
       if (launchIntent != null) {
         AppEntry(
@@ -89,12 +80,6 @@ class LauncherActivity : AppCompatActivity() {
         )
       } else null
     }.sortedBy { it.label.lowercase() }
-
-    return if (includeOpenApps) {
-      listOf(AppEntry(label = "Open apps in memory", packageName = OPEN_APPS_SENTINEL)) + launchableApps
-    } else {
-      launchableApps
-    }
   }
 
   private fun buildLetterIndex() {
@@ -122,7 +107,6 @@ class LauncherActivity : AppCompatActivity() {
   }
 
   private fun jumpToLetterGroup(keyCode: Int) {
-
     val letters = lettersForKey(keyCode) ?: return
 
     val positions = letters
