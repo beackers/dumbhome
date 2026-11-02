@@ -222,7 +222,7 @@ class MainActivity : AppCompatActivity() {
                     if (intent != null) {
                         startActivity(intent)
                     } else {
-                        Toast.makeText(this, "App not found", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, R.string.app_not_found, Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -341,12 +341,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun requestNotificationsPermissions() {
         AlertDialog.Builder(this)
-            .setTitle("DumbHome is requesting permissions")
+            .setTitle(R.string.notification_permission_title)
             .setMessage("DumbHome is requesting access to read your notifications. \nDumbHome does not collect or share your information. \n To allow notification access, click 'Open settings' and tap DumbHome, then select Allowed and return home.")
-            .setPositiveButton("Open settings") { _, _ ->
+            .setPositiveButton(R.string.open_settings) { _, _ ->
                 startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
