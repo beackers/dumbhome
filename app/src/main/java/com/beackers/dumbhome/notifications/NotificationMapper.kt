@@ -1,5 +1,6 @@
 package com.beackers.dumbhome.notifications
 
+import com.beackers.dumbhome.R
 import android.content.Context
 import android.service.notification.StatusBarNotification
 
