@@ -79,20 +79,20 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun refreshRows() {
         rows.clear()
-        rows += SettingsRow("Change home image", SettingsRowAction.CHANGE_WALLPAPER)
+        rows += SettingsRow(getString(R.string.choose_wallpaper), SettingsRowAction.CHANGE_WALLPAPER)
         rows += shortcutRow("Configure F11", Prefs.KEY_F11)
         rows += shortcutRow("Configure Menu", Prefs.KEY_MENU)
         rows += shortcutRow("Configure Up", Prefs.KEY_UP)
         rows += shortcutRow("Configure Down", Prefs.KEY_DOWN)
         rows += shortcutRow("Configure Left", Prefs.KEY_LEFT)
         rows += shortcutRow("Configure Right", Prefs.KEY_RIGHT)
-        rows += SettingsRow("Close", SettingsRowAction.CLOSE)
+        rows += SettingsRow(getString(R.string.cancel), SettingsRowAction.CLOSE)
         adapter.submit(rows)
     }
 
     private fun shortcutRow(label: String, prefKey: String): SettingsRow =
         SettingsRow(
-            label = "$label (${prefs.getShortcut(prefKey).displayName})",
+            label = getString(R.string.configure_shortcut, label) + " (" + prefs.getShortcut(prefKey).displayName + ")",
             action = SettingsRowAction.CONFIGURE_SHORTCUT,
             prefKey = prefKey
         )
@@ -116,7 +116,7 @@ class SettingsActivity : AppCompatActivity() {
         val actions = ShortcutAction.entries
 
         AlertDialog.Builder(this)
-            .setTitle("Shortcut action")
+            .setTitle(R.string.shortcut_action)
             .setItems(actions.map { it.displayName }.toTypedArray()) { _, which ->
                 if (actions[which] == ShortcutAction.OPEN_ACTIVITY) {
                     currentPrefKey = prefKey
