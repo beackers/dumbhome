@@ -14,7 +14,6 @@ import android.provider.MediaStore
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.IntentFilter
-import android.os.SystemClock
 import android.text.format.DateFormat
 import android.view.KeyEvent
 import android.view.View
@@ -57,8 +56,7 @@ class MainActivity : AppCompatActivity() {
     private var wifiSsid: String? = null
     private var wifiDbm: Int? = null
 
-    private var ninePressCount = 0
-    private var lastNinePressTime = 0L
+    private val emergencySequence = EmergencySequence()
 
     private lateinit var notificationList: RecyclerView
     private lateinit var recentCenterIcon: ImageView
@@ -433,25 +431,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stepToEmergencyDial(): ShortcutAction? {
-        val now = SystemClock.elapsedRealtime()
-        ninePressCount = if (now - lastNinePressTime <= EMERGENCY_SEQUENCE_WINDOW_MILLIS) {
-            ninePressCount + 1
-        } else {
-            1
-        }
-        lastNinePressTime = now
-
-        if (ninePressCount >= EMERGENCY_SEQUENCE_PRESS_COUNT) {
-            ninePressCount = 0
-            lastNinePressTime = 0L
+        if (emergencySequence.press()) {
             startActivity(Intent(this, ChallengeActivity::class.java))
         }
         return null
-    }
-
-    companion object {
-        private const val EMERGENCY_SEQUENCE_PRESS_COUNT = 5
-        private const val EMERGENCY_SEQUENCE_WINDOW_MILLIS = 5_000L
     }
 }
 
