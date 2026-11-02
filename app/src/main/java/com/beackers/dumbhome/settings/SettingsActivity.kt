@@ -23,7 +23,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySettingsBinding
     private lateinit var list: RecyclerView
     private lateinit var adapter: SimpleTextAdapter
-    private val rows = mutableListOf<String>()
+    private val rows = mutableListOf<SettingsRow>()
 
     private val cropWallpaper = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -71,7 +71,7 @@ class SettingsActivity : AppCompatActivity() {
         prefs = Prefs(this)
         list = findViewById(R.id.settingsList)
         list.layoutManager = LinearLayoutManager(this)
-        adapter = SimpleTextAdapter(rows) { onClickRow(it) }
+        adapter = SimpleTextAdapter(rows, ::onClickRow)
         list.adapter = adapter
 
         refreshRows()
@@ -79,29 +79,36 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun refreshRows() {
         rows.clear()
-        rows += "Change home image"
-        rows += "Configure F11 (${prefs.getShortcut(Prefs.KEY_F11).displayName})"
-        rows += "Configure Menu (${prefs.getShortcut(Prefs.KEY_MENU).displayName})"
-        rows += "Configure Up (${prefs.getShortcut(Prefs.KEY_UP).displayName})"
-        rows += "Configure Down (${prefs.getShortcut(Prefs.KEY_DOWN).displayName})"
-        rows += "Configure Left (${prefs.getShortcut(Prefs.KEY_LEFT).displayName})"
-        rows += "Configure Right (${prefs.getShortcut(Prefs.KEY_RIGHT).displayName})"
-        rows += "Close"
+        rows += SettingsRow("Change home image", SettingsRowAction.CHANGE_WALLPAPER)
+        rows += shortcutRow("Configure F11", Prefs.KEY_F11)
+        rows += shortcutRow("Configure Menu", Prefs.KEY_MENU)
+        rows += shortcutRow("Configure Up", Prefs.KEY_UP)
+        rows += shortcutRow("Configure Down", Prefs.KEY_DOWN)
+        rows += shortcutRow("Configure Left", Prefs.KEY_LEFT)
+        rows += shortcutRow("Configure Right", Prefs.KEY_RIGHT)
+        rows += SettingsRow("Close", SettingsRowAction.CLOSE)
         adapter.submit(rows)
     }
 
-    private fun onClickRow(position: Int) {
-        when (position) {
-            0 -> pickWallpaper.launch(
-                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-            )
-            1 -> pickAction(Prefs.KEY_F11)
-            2 -> pickAction(Prefs.KEY_MENU)
-            3 -> pickAction(Prefs.KEY_UP)
-            4 -> pickAction(Prefs.KEY_DOWN)
-            5 -> pickAction(Prefs.KEY_LEFT)
-            6 -> pickAction(Prefs.KEY_RIGHT)
-            7 -> finish()
+    private fun shortcutRow(label: String, prefKey: String): SettingsRow =
+        SettingsRow(
+            label = "$label (${prefs.getShortcut(prefKey).displayName})",
+            action = SettingsRowAction.CONFIGURE_SHORTCUT,
+            prefKey = prefKey
+        )
+
+    private fun onClickRow(row: SettingsRow) {
+        when (row.action) {
+            SettingsRowAction.CHANGE_WALLPAPER ->
+                pickWallpaper.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                )
+
+            SettingsRowAction.CONFIGURE_SHORTCUT ->
+                row.prefKey?.let(::pickAction)
+
+            SettingsRowAction.CLOSE ->
+                finish()
         }
     }
 
