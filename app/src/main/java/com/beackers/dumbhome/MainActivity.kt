@@ -7,14 +7,11 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.provider.Settings
 import android.provider.MediaStore
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.IntentFilter
-import android.text.format.DateFormat
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
@@ -31,15 +28,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 import com.beackers.dumbhome.notifications.NotificationStore
-import com.beackers.dumbhome.notifications.NotificationRow
 import com.beackers.dumbhome.notifications.NotificationAdapter
 import com.beackers.dumbhome.notifications.DumbNotificationListener
 import com.beackers.dumbhome.launcher.LauncherActivity
 
-import java.util.Locale
-import java.util.TimeZone
-import java.util.Date
-import java.text.SimpleDateFormat
 
 class MainActivity : AppCompatActivity() {
     private lateinit var prefs: Prefs
@@ -49,6 +41,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var clockView: TextView
     private lateinit var utcView: TextView
     private lateinit var dateView: TextView
+    private lateinit var clockController: ClockController
+    private lateinit var notificationAdapter: NotificationAdapter
+    private val recentAppsRepository by lazy { RecentAppsRepository(this) }
 
     private var cellLevel: Int? = null
     private var cellDbm: Int? = null
@@ -70,33 +65,6 @@ class MainActivity : AppCompatActivity() {
     private var rightRecentApp: RecentApp? = null
     private var upRecentApp: RecentApp? = null
     private var downRecentApp: RecentApp? = null
-
-    private var receiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            if (shade.visibility == View.VISIBLE) {
-                refreshNotificationList()
-            }
-        }
-    }
-    private val handler = Handler(Looper.getMainLooper())
-
-    private val utcFmt = SimpleDateFormat("HH:mm:ss 'UTC'", Locale.US).apply {
-        this.timeZone = TimeZone.getTimeZone("UTC")
-    }
-    private val clockRunnable = object : Runnable {
-        override fun run() {
-            val now = Date()
-            val time = DateFormat.format("HH:mm:ss", now)
-            val date = DateFormat.format("EEE, MMM d yyyy", now)
-            val utc = utcFmt.format(Date())
-
-            clockView.text = time
-            utcView.text = utc
-            dateView.text = date
-            val delay = 1000 - (System.currentTimeMillis() % 1000)
-            handler.postDelayed(this, delay)
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -136,6 +104,12 @@ class MainActivity : AppCompatActivity() {
         clockView = findViewById(R.id.clockText)
         utcView = findViewById(R.id.utcText)
         dateView = findViewById(R.id.dateText)
+        clockController = ClockController(clockView, utcView, dateView)
+
+        notificationAdapter = NotificationAdapter {
+            DumbNotificationListener.instance?.clearNotification(it)
+        }
+        notificationList.adapter = notificationAdapter
 
         loadWallpaper()
         ensurePermissions()
@@ -143,15 +117,15 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        registerReceiver(receiver, IntentFilter("com.beackers.dumbhome.NOTIFICATIONS_UPDATED"))
+        registerReceiver(receiver, IntentFilter(NotificationEvents.ACTION_UPDATED))
         loadWallpaper()
-        handler.post(clockRunnable)
+        clockController.start()
     }
 
     override fun onPause() {
         super.onPause()
         unregisterReceiver(receiver)
-        handler.removeCallbacks(clockRunnable)
+        clockController.stop()
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -273,31 +247,20 @@ class MainActivity : AppCompatActivity() {
             requestNotificationsPermissions()
             return
         }
-        val rows = NotificationStore.rows(this)
-            .ifEmpty {
-                listOf(
-                    NotificationRow(
-                        key = "",
-                        appName = "",
-                        title = "",
-                        text = "All caught up :)",
-                        intent = null
-                    )
-                )
-            }
-        notificationList.adapter = NotificationAdapter(rows) { key ->
-            DumbNotificationListener.instance?.clearNotification(key)
-        }
+        submitNotificationRows()
         shade.visibility = View.VISIBLE
         focusFirstNotification()
     }
 
     private fun refreshNotificationList() {
-        val rows = NotificationStore.rows(this)
-        notificationList.adapter = NotificationAdapter(rows) { key ->
-            DumbNotificationListener.instance?.clearNotification(key)
-        }
+        submitNotificationRows()
         focusFirstNotification()
+    }
+
+    private fun submitNotificationRows() {
+        val rows = NotificationMapper.rows(this, NotificationStore.snapshot())
+            .ifEmpty { listOf(NotificationMapper.emptyRow()) }
+        notificationAdapter.submitList(rows)
     }
 
     private fun focusFirstNotification() {
@@ -321,7 +284,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val apps = getTopRecentApps(this)
+        val apps = recentAppsRepository.getTopRecentApps()
         centerRecentApp = apps.getOrNull(0)
         rightRecentApp = apps.getOrNull(1)
         downRecentApp = apps.getOrNull(2)
@@ -342,39 +305,6 @@ class MainActivity : AppCompatActivity() {
 
         recentAppsShade.visibility = View.VISIBLE
         recentCenterIcon.requestFocus()
-    }
-
-    private fun getTopRecentApps(context: Context, limit: Int = 5): List<RecentApp> {
-        val usm = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-        val now = System.currentTimeMillis()
-
-        val stats = usm.queryUsageStats(
-            UsageStatsManager.INTERVAL_DAILY,
-            now - (6 * 60 * 60 * 1000),
-            now
-        ) ?: emptyList()
-
-        val pm = context.packageManager
-
-        return stats
-            .filter { it.lastTimeUsed > 0 }
-            .sortedByDescending { it.lastTimeUsed }
-            .mapNotNull { stat ->
-                if (stat.packageName == packageName) return@mapNotNull null
-
-                val intent = pm.getLaunchIntentForPackage(stat.packageName)
-                    ?: return@mapNotNull null
-
-                val info = pm.getApplicationInfo(stat.packageName, 0)
-
-                RecentApp(
-                    label = pm.getApplicationLabel(info).toString(),
-                    icon = pm.getApplicationIcon(info),
-                    intent = intent
-                )
-            }
-            .distinctBy { it.intent.component?.packageName }
-            .take(limit)
     }
 
     private fun hasUsagePermissions(): Boolean {
