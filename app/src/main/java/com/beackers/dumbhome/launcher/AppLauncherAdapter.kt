@@ -1,15 +1,12 @@
 package com.beackers.dumbhome.launcher
 
-import android.view.View
-import android.graphics.Color
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import android.widget.ImageView
-
-import com.beackers.dumbhome.R
-
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.beackers.dumbhome.R
 
 class AppLauncherAdapter(
     private val apps: List<AppEntry>,
@@ -27,27 +24,16 @@ class AppLauncherAdapter(
         return Holder(view)
     }
 
-    override fun getItemCount() = apps.size
+    override fun getItemCount(): Int = apps.size
 
     override fun onBindViewHolder(holder: Holder, position: Int) {
         val app = apps[position]
+
         holder.name.text = app.label
         holder.name.isSelected = false
+        holder.icon.setImageDrawable(app.icon)
+        holder.icon.visibility = View.VISIBLE
 
-        val iconDrawable = try {
-            holder.itemView.context.packageManager.getApplicationIcon(app.packageName)
-        } catch (_: Exception) {
-            null
-        }
-
-        holder.icon.apply {
-            setImageDrawable(iconDrawable)
-            visibility = if (iconDrawable != null) View.VISIBLE else View.GONE
-            setBackgroundColor(Color.TRANSPARENT)
-        }
-
-        // The launcher handles selection itself. Do not let Android add a
-        // pressed/focus highlight when the row is clicked.
         holder.itemView.apply {
             isFocusable = false
             isFocusableInTouchMode = false
