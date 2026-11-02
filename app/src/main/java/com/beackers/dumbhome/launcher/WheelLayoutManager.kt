@@ -5,7 +5,6 @@ import android.graphics.Typeface
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.beackers.dumbhome.R
 import kotlin.math.cos
 
 class WheelLayoutManager(context: Context) : LinearLayoutManager(context, VERTICAL, false) {
@@ -41,10 +40,13 @@ class WheelLayoutManager(context: Context) : LinearLayoutManager(context, VERTIC
     fun scrollToScreenCenter(recycler: RecyclerView, position: Int) {
         updateViewport(recycler)
 
+        // Lay out the target once so we can use its real measured height instead
+        // of duplicating the XML row height in Kotlin.
+        scrollToPositionWithOffset(position, 0)
+        val childHeight = findViewByPosition(position)?.measuredHeight ?: 0
         val screenCenterY = resources.displayMetrics.heightPixels / 2f
         val recyclerCenterY = screenCenterY - recyclerTopOnScreen
-        val itemHeight = recycler.resources.getDimensionPixelSize(R.dimen.launcher_item_height)
-        val desiredTop = (recyclerCenterY - itemHeight / 2f).toInt()
+        val desiredTop = (recyclerCenterY - childHeight / 2f).toInt()
 
         scrollToPositionWithOffset(position, desiredTop)
         applyWheelTransforms()
