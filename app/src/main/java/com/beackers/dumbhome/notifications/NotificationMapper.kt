@@ -32,11 +32,11 @@ object NotificationMapper {
         }
     }
 
-    fun emptyRow(): NotificationRow = NotificationRow(
+    fun emptyRow(context: Context): NotificationRow = NotificationRow(
         key = "",
         appName = "",
         title = "",
-        text = "All caught up :)",
+        text = context.getString(R.string.all_caught_up),
         intent = null
     )
 }
