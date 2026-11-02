@@ -1,14 +1,21 @@
 package com.beackers.dumbhome.notifications
 
+import android.content.Intent
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import android.content.Intent
 
 class DumbNotificationListener : NotificationListenerService() {
 
     override fun onCreate() {
         super.onCreate()
         instance = this
+    }
+
+    override fun onDestroy() {
+        if (instance === this) {
+            instance = null
+        }
+        super.onDestroy()
     }
 
     override fun onListenerConnected() {
@@ -25,9 +32,9 @@ class DumbNotificationListener : NotificationListenerService() {
 
     private fun refresh() {
         NotificationStore.update(activeNotifications ?: emptyArray())
-        sendBroadcast(Intent("com.beackers.dumbhome.NOTIFICATIONS_UPDATED"))
+        sendBroadcast(Intent(NotificationEvents.ACTION_UPDATED))
     }
-    
+
     fun clearNotification(key: String) {
         cancelNotification(key)
         refresh()
