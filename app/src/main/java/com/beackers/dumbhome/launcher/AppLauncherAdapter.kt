@@ -1,6 +1,7 @@
 package com.beackers.dumbhome.launcher
 
 import android.view.View
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.TextView
@@ -33,9 +34,30 @@ class AppLauncherAdapter(
         holder.name.text = app.label
         holder.name.isSelected = false
 
-        holder.icon.setImageDrawable(
+        val iconDrawable = try {
             holder.itemView.context.packageManager.getApplicationIcon(app.packageName)
-        )
+        } catch (_: Exception) {
+            null
+        }
+
+        holder.icon.apply {
+            setImageDrawable(iconDrawable)
+            visibility = if (iconDrawable != null) View.VISIBLE else View.GONE
+            setBackgroundColor(Color.TRANSPARENT)
+        }
+
+        // The launcher handles selection itself. Do not let Android add a
+        // pressed/focus highlight when the row is clicked.
+        holder.itemView.apply {
+            isFocusable = false
+            isFocusableInTouchMode = false
+            isClickable = true
+            isLongClickable = false
+            defaultFocusHighlightEnabled = false
+            foreground = null
+            background = null
+            stateListAnimator = null
+        }
 
         holder.itemView.setOnClickListener {
             onLaunch(app)
