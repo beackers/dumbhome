@@ -45,6 +45,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var notificationAdapter: NotificationAdapter
     private val recentAppsRepository by lazy { RecentAppsRepository(this) }
 
+    private val notificationReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (shade.visibility == View.VISIBLE) {
+                refreshNotificationList()
+            }
+        }
+    }
+
     private var cellLevel: Int? = null
     private var cellDbm: Int? = null
     private var cellType: String = ""
@@ -117,14 +125,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        registerReceiver(receiver, IntentFilter(NotificationEvents.ACTION_UPDATED))
+        registerReceiver(notificationReceiver, IntentFilter(NotificationEvents.ACTION_UPDATED))
         loadWallpaper()
         clockController.start()
     }
 
     override fun onPause() {
         super.onPause()
-        unregisterReceiver(receiver)
+        unregisterReceiver(notificationReceiver)
         clockController.stop()
     }
 
@@ -279,7 +287,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        if (!hasUsagePermissions()) {
+        if (!recentAppsRepository.hasUsageAccess()) {
             startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
             return
         }
@@ -305,16 +313,6 @@ class MainActivity : AppCompatActivity() {
 
         recentAppsShade.visibility = View.VISIBLE
         recentCenterIcon.requestFocus()
-    }
-
-    private fun hasUsagePermissions(): Boolean {
-        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = appOps.unsafeCheckOpNoThrow(
-            AppOpsManager.OPSTR_GET_USAGE_STATS,
-            android.os.Process.myUid(),
-            packageName
-        )
-        return mode == AppOpsManager.MODE_ALLOWED
     }
 
     private fun showAppLauncher() {
