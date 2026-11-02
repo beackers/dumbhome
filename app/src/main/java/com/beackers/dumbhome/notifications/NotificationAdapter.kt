@@ -37,9 +37,9 @@ class NotificationAdapter(
         holder.cancelPendingAction()
 
         val row = getItem(position)
-        holder.appName.text = row.appName.ifEmpty { "Unknown app" }
-        holder.title.text = row.title.ifEmpty { "(No title)" }
-        holder.text.text = row.text.ifEmpty { "(No message)" }
+        holder.appName.text = row.appName.ifEmpty { holder.itemView.context.getString(R.string.unknown_app) }
+        holder.title.text = row.title.ifEmpty { holder.itemView.context.getString(R.string.no_title) }
+        holder.text.text = row.text.ifEmpty { holder.itemView.context.getString(R.string.no_message) }
 
         var handled = false
 
