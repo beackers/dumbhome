@@ -5,4 +5,16 @@
     <string name="choose_wallpaper">Change home image</string>
     <string name="choose_live_wallpaper">Set live wallpaper</string>
     <string name="custom_notifications">Notifications</string>
+    <string name="all_caught_up">All caught up :)</string>
+    <string name="unknown_app">Unknown app</string>
+    <string name="no_title">(No title)</string>
+    <string name="no_message">(No message)</string>
+    <string name="app_not_found">App not found</string>
+    <string name="notification_permission_title">DumbHome is requesting permissions</string>
+    <string name="notification_permission_message">DumbHome is requesting access to read your notifications.\nDumbHome does not collect or share your information.\nTo allow notification access, click Open settings and tap DumbHome, then select Allowed and return home.</string>
+    <string name="open_settings">Open settings</string>
+    <string name="cancel">Cancel</string>
+    <string name="home_wallpaper">Home wallpaper</string>
+    <string name="configure_shortcut">Configure %1$s</string>
+    <string name="shortcut_action">Shortcut action</string>
 </resources>
