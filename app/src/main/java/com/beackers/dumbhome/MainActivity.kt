@@ -259,7 +259,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun submitNotificationRows() {
         val rows = NotificationMapper.rows(this, NotificationStore.snapshot())
-            .ifEmpty { listOf(NotificationMapper.emptyRow()) }
+            .ifEmpty { listOf(NotificationMapper.emptyRow(this)) }
         notificationAdapter.submitList(rows)
     }
 
