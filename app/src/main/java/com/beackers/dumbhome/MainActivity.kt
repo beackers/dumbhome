@@ -1,8 +1,6 @@
 package com.beackers.dumbhome
 
 import android.Manifest
-import android.app.AppOpsManager
-import android.app.usage.UsageStatsManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -19,7 +17,6 @@ import android.widget.TextView
 import android.widget.ImageView
 import android.widget.Toast
 
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -53,12 +50,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-    private var cellLevel: Int? = null
-    private var cellDbm: Int? = null
-    private var cellType: String = ""
-    private var wifiSsid: String? = null
-    private var wifiDbm: Int? = null
 
     private val emergencySequence = EmergencySequence()
 
