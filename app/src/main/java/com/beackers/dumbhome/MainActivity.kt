@@ -17,7 +17,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.ImageView
-import android.graphics.drawable.Drawable
 import android.widget.Toast
 
 import androidx.activity.result.contract.ActivityResultContracts
@@ -30,6 +29,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.beackers.dumbhome.notifications.NotificationStore
 import com.beackers.dumbhome.notifications.NotificationAdapter
 import com.beackers.dumbhome.notifications.DumbNotificationListener
+import com.beackers.dumbhome.notifications.NotificationEvents
+import com.beackers.dumbhome.notifications.NotificationMapper
 import com.beackers.dumbhome.launcher.LauncherActivity
 
 
@@ -366,8 +367,3 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-private data class RecentApp(
-    val label: String,
-    val icon: Drawable,
-    val intent: Intent
-)
