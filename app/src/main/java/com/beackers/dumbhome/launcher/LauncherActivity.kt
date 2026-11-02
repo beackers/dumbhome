@@ -230,9 +230,9 @@ class LauncherActivity : AppCompatActivity() {
     private inner class WheelLayoutManager :
         LinearLayoutManager(this@LauncherActivity, VERTICAL, false) {
 
-        private val itemSpacing = dp(52f)
+        private val itemSpacing = dp(60f)
         private val horizontalRadius = dp(150f)
-        private val itemHeight = dp(48f)
+        private val itemHeight = dp(56f)
         private val maxAngle = Math.toRadians(72.0)
 
         override fun onLayoutChildren(recycler: RecyclerView.Recycler, state: RecyclerView.State) {
