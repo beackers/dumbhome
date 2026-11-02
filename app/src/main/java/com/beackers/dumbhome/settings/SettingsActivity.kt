@@ -4,7 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
-import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -26,16 +25,35 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var adapter: SimpleTextAdapter
     private val rows = mutableListOf<String>()
 
-    private val cropWallpaper = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+    private val cropWallpaper = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
         refreshRows()
     }
 
-    private val pickWallpaper = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
+    private val pickWallpaper = registerForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
         if (uri == null) return@registerForActivityResult
+
         cropWallpaper.launch(
             Intent(this, WallpaperCropActivity::class.java)
-                .putExtra(WallpaperCropActivity.EXTRA_IMAGE_URI, uri),
+                .putExtra(WallpaperCropActivity.EXTRA_IMAGE_URI, uri)
         )
+    }
+
+    private val pickShortcutApp = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode != RESULT_OK) return@registerForActivityResult
+
+        val packageName = result.data?.getStringExtra(LauncherActivity.EXTRA_SELECTED_PACKAGE)
+            ?: return@registerForActivityResult
+        val key = currentPrefKey ?: return@registerForActivityResult
+
+        prefs.setShortcut(key, ShortcutAction.OPEN_ACTIVITY)
+        prefs.setShortcutApp(key, packageName)
+        refreshRows()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,8 +64,7 @@ class SettingsActivity : AppCompatActivity() {
         window.setDecorFitsSystemWindows(false)
         window.navigationBarColor = android.graphics.Color.TRANSPARENT
 
-        var wallpaper = loadSavedWallpaper()
-        wallpaper?.let {
+        WallpaperStorage.load(this)?.let {
             binding.settingsLayout.background = BitmapDrawable(resources, it)
         }
 
@@ -58,18 +75,6 @@ class SettingsActivity : AppCompatActivity() {
         list.adapter = adapter
 
         refreshRows()
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == 100 && resultCode == RESULT_OK) {
-          val packageName = data?.getStringExtra("package") ?: return
-          val key = currentPrefKey ?: return
-          prefs.setShortcut(key, ShortcutAction.OPEN_ACTIVITY)
-          prefs.setShortcutApp(key, packageName)
-          refreshRows()
-      }
     }
 
     private fun refreshRows() {
@@ -87,7 +92,9 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun onClickRow(position: Int) {
         when (position) {
-            0 -> pickWallpaper.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            0 -> pickWallpaper.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            )
             1 -> pickAction(Prefs.KEY_F11)
             2 -> pickAction(Prefs.KEY_MENU)
             3 -> pickAction(Prefs.KEY_UP)
@@ -100,27 +107,22 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun pickAction(prefKey: String) {
         val actions = ShortcutAction.entries
+
         AlertDialog.Builder(this)
             .setTitle("Shortcut action")
             .setItems(actions.map { it.displayName }.toTypedArray()) { _, which ->
                 if (actions[which] == ShortcutAction.OPEN_ACTIVITY) {
                     currentPrefKey = prefKey
-                    pickApp(prefKey)
+                    pickShortcutApp.launch(
+                        Intent(this, LauncherActivity::class.java).apply {
+                            putExtra(LauncherActivity.EXTRA_PICK_MODE, true)
+                        }
+                    )
                 } else {
                     prefs.setShortcut(prefKey, actions[which])
                     refreshRows()
                 }
             }
             .show()
-    }
-
-    private fun pickApp(prefKey: String) {
-        val intent = Intent(this, LauncherActivity::class.java)
-        intent.putExtra("pick_mode", true)
-        startActivityForResult(intent, 100)
-    }
-    
-    private fun loadSavedWallpaper(): Bitmap? {
-        return WallpaperStorage.load(this)
     }
 }
