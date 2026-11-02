@@ -5,6 +5,8 @@
     android:orientation="horizontal"
     android:gravity="center"
     android:background="@android:color/transparent"
+    android:foreground="@null"
+    android:clickable="true"
     android:focusable="false"
     android:focusableInTouchMode="false">
 
@@ -13,6 +15,7 @@
         android:layout_width="24dp"
         android:layout_height="24dp"
         android:layout_marginEnd="7dp"
+        android:visibility="visible"
         android:scaleType="fitCenter"
         android:contentDescription="@null" />
 
