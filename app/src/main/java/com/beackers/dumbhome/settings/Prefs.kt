@@ -1,7 +1,6 @@
 package com.beackers.dumbhome
 
 import android.content.Context
-import android.net.Uri
 
 class Prefs(context: Context) {
     private val prefs = context.getSharedPreferences("dumbhome_prefs", Context.MODE_PRIVATE)
@@ -19,7 +18,8 @@ class Prefs(context: Context) {
             .apply()
     }
 
-    fun getShortcut(key: String): ShortcutAction = ShortcutAction.fromName(prefs.getString(key, ShortcutAction.NONE.name))
+    fun getShortcut(key: String): ShortcutAction =
+        ShortcutAction.fromName(prefs.getString(key, ShortcutAction.NONE.name))
 
     fun setShortcut(key: String, action: ShortcutAction) {
         prefs.edit().putString(key, action.name).apply()
@@ -29,15 +29,8 @@ class Prefs(context: Context) {
         prefs.edit().putString("${key}_app", packageName).apply()
     }
 
-    fun getShortcutApp(key: String): String? {
-        return prefs.getString("${key}_app", null)
-    }
-
-    fun setWallpaper(uri: Uri?) {
-        prefs.edit().putString(KEY_WALLPAPER_URI, uri?.toString()).apply()
-    }
-
-    fun getWallpaperUri(): Uri? = prefs.getString(KEY_WALLPAPER_URI, null)?.let(Uri::parse)
+    fun getShortcutApp(key: String): String? =
+        prefs.getString("${key}_app", null)
 
     companion object {
         const val KEY_INITIALIZED = "initialized"
@@ -47,7 +40,6 @@ class Prefs(context: Context) {
         const val KEY_DOWN = "down"
         const val KEY_LEFT = "left"
         const val KEY_RIGHT = "right"
-        const val KEY_WALLPAPER_URI = "wallpaper_uri"
 
         val shortcutKeys = listOf(KEY_F11, KEY_MENU, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT)
     }
