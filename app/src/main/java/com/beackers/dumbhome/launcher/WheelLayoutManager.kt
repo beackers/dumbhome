@@ -5,6 +5,7 @@ import android.graphics.Typeface
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.beackers.dumbhome.R
 import kotlin.math.cos
 
 class WheelLayoutManager(context: Context) : LinearLayoutManager(context, VERTICAL, false) {
@@ -13,10 +14,8 @@ class WheelLayoutManager(context: Context) : LinearLayoutManager(context, VERTIC
     private val horizontalRadius = dp(150f)
     private val maxAngle = Math.toRadians(72.0)
     private var selectedIndex = 0
-    private var recyclerTopOnScreen = 0f
 
     override fun onLayoutChildren(recycler: RecyclerView.Recycler, state: RecyclerView.State) {
-        updateViewport(recycler)
         super.onLayoutChildren(recycler, state)
         applyWheelTransforms()
     }
@@ -26,7 +25,6 @@ class WheelLayoutManager(context: Context) : LinearLayoutManager(context, VERTIC
         recycler: RecyclerView.Recycler,
         state: RecyclerView.State
     ): Int {
-        updateViewport(recycler)
         val consumed = super.scrollVerticallyBy(dy, recycler, state)
         applyWheelTransforms()
         return consumed
@@ -38,14 +36,11 @@ class WheelLayoutManager(context: Context) : LinearLayoutManager(context, VERTIC
     }
 
     fun scrollToScreenCenter(recycler: RecyclerView, position: Int) {
-        updateViewport(recycler)
-
         // Lay out the target once so we can use its real measured height instead
         // of duplicating the XML row height in Kotlin.
         scrollToPositionWithOffset(position, 0)
         val childHeight = findViewByPosition(position)?.measuredHeight ?: 0
-        val screenCenterY = resources.displayMetrics.heightPixels / 2f
-        val recyclerCenterY = screenCenterY - recyclerTopOnScreen
+        val recyclerCenterY = recycler.height / 2f
         val desiredTop = (recyclerCenterY - childHeight / 2f).toInt()
 
         scrollToPositionWithOffset(position, desiredTop)
@@ -53,7 +48,7 @@ class WheelLayoutManager(context: Context) : LinearLayoutManager(context, VERTIC
     }
 
     fun applyWheelTransforms() {
-        val centerY = screenCenterInRecyclerView()
+        val centerY = height / 2f
 
         for (i in 0 until childCount) {
             val child = getChildAt(i) ?: continue
@@ -86,16 +81,6 @@ class WheelLayoutManager(context: Context) : LinearLayoutManager(context, VERTIC
                 child.alpha = 1f
             }
         }
-    }
-
-    private fun updateViewport(recycler: RecyclerView) {
-        val location = IntArray(2)
-        recycler.getLocationOnScreen(location)
-        recyclerTopOnScreen = location[1].toFloat()
-    }
-
-    private fun screenCenterInRecyclerView(): Float {
-        return resources.displayMetrics.heightPixels / 2f - recyclerTopOnScreen
     }
 
     private fun dp(value: Float): Float = value * density
