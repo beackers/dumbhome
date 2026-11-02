@@ -1,25 +1,30 @@
 package com.beackers.dumbhome.notifications
 
-import android.os.Handler
-import android.os.Looper
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.beackers.dumbhome.R
 
 class NotificationAdapter(
-    private val rows: List<NotificationRow>,
     private val onNotificationHandled: (String) -> Unit
-) : RecyclerView.Adapter<NotificationAdapter.ViewHolder>() {
+) : ListAdapter<NotificationRow, NotificationAdapter.ViewHolder>(DIFF_CALLBACK) {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val container: View = view
         val appName: TextView = view.findViewById(R.id.notificationApp)
         val title: TextView = view.findViewById(R.id.notificationTitle)
         val text: TextView = view.findViewById(R.id.notificationBody)
+        var pendingAction: Runnable? = null
+
+        fun cancelPendingAction() {
+            pendingAction?.let(itemView::removeCallbacks)
+            pendingAction = null
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -28,18 +33,15 @@ class NotificationAdapter(
         return ViewHolder(view)
     }
 
-    override fun getItemCount(): Int = rows.size
-
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val row = rows[position]
+        holder.cancelPendingAction()
 
+        val row = getItem(position)
         holder.appName.text = row.appName.ifEmpty { "Unknown app" }
         holder.title.text = row.title.ifEmpty { "(No title)" }
         holder.text.text = row.text.ifEmpty { "(No message)" }
 
-        val handler = Handler(Looper.getMainLooper())
         var handled = false
-        var pendingAction: Runnable? = null
 
         fun handleNotification() {
             if (handled) return
@@ -49,7 +51,6 @@ class NotificationAdapter(
                 try {
                     row.intent.send()
                 } catch (_: Exception) {
-                    // A stale PendingIntent is no more useful than no intent.
                     onNotificationHandled(row.key)
                 }
             } else {
@@ -64,19 +65,33 @@ class NotificationAdapter(
 
             when (event.action) {
                 KeyEvent.ACTION_DOWN -> {
-                    if (event.repeatCount == 0 && pendingAction == null) {
-                        pendingAction = Runnable { handleNotification() }
-                        handler.postDelayed(pendingAction!!, 450L)
+                    if (event.repeatCount == 0 && holder.pendingAction == null) {
+                        holder.pendingAction = Runnable { handleNotification() }
+                        holder.container.postDelayed(holder.pendingAction!!, 450L)
                     }
                     true
                 }
                 KeyEvent.ACTION_UP -> {
-                    pendingAction?.let(handler::removeCallbacks)
-                    pendingAction = null
+                    holder.cancelPendingAction()
                     true
                 }
                 else -> true
             }
+        }
+    }
+
+    override fun onViewRecycled(holder: ViewHolder) {
+        holder.cancelPendingAction()
+        super.onViewRecycled(holder)
+    }
+
+    companion object {
+        private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<NotificationRow>() {
+            override fun areItemsTheSame(oldItem: NotificationRow, newItem: NotificationRow): Boolean =
+                oldItem.key == newItem.key
+
+            override fun areContentsTheSame(oldItem: NotificationRow, newItem: NotificationRow): Boolean =
+                oldItem == newItem
         }
     }
 }
