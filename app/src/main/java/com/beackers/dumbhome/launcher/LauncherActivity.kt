@@ -284,12 +284,10 @@ class LauncherActivity : AppCompatActivity() {
                 val isSelected = adapterPosition == selectedIndex
                 val nameView = child.findViewById<TextView>(R.id.appName)
                 nameView.isSelected = isSelected
-                nameView.textSize = when {
-                    absDistance < 0.5f -> 20f
-                    absDistance < 1.5f -> 17f
-                    absDistance < 2.25f -> 14f
-                    else -> 12f
-                }
+                // Keep the TextView's measured font size constant. Changing textSize
+                // after RecyclerView layout can leave Android's text bounds stale and
+                // clip the glyphs. The row's scale already provides the distance effect.
+                nameView.textSize = 20f
                 if (isSelected) {
                     child.scaleX = 1f
                     child.scaleY = 1f
