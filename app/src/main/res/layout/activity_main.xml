@@ -9,7 +9,7 @@
         android:id="@+id/backgroundImage"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:contentDescription="Home wallpaper"
+        android:contentDescription="@string/home_wallpaper"
         android:scaleType="centerCrop" />
 
     <LinearLayout
@@ -74,7 +74,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Notifications"
+            android:text="@string/custom_notifications"
             android:textColor="@color/white"
             android:textSize="20sp" />
 
