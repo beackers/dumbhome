@@ -91,7 +91,9 @@ class WheelLayoutManager(context: Context) : LinearLayoutManager(context, VERTIC
         scrollToPositionWithOffset(position, 0)
         val childHeight = findViewByPosition(position)?.measuredHeight ?: 0
         val recyclerCenterY = recycler.height / 2f
-        val desiredTop = (recyclerCenterY - childHeight / 2f).toInt()
+        val desiredTop = (
+            recyclerCenterY - childHeight / 2f - recycler.paddingTop
+        ).toInt()
 
         scrollToPositionWithOffset(position, desiredTop)
         applyWheelTransforms()
