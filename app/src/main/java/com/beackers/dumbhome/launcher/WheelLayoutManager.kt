@@ -14,9 +14,35 @@ class WheelLayoutManager(context: Context) : LinearLayoutManager(context, VERTIC
     private val horizontalRadius = dp(150f)
     private val maxAngle = Math.toRadians(72.0)
     private var selectedIndex = 0
+    private var attachedRecycler: RecyclerView? = null
+    private var recenterWhenIdle = false
+
+    override fun onAttachedToWindow(view: RecyclerView) {
+        super.onAttachedToWindow(view)
+        attachedRecycler = view
+    }
+
+    override fun onDetachedFromWindow(view: RecyclerView, recycler: RecyclerView.Recycler) {
+        attachedRecycler = null
+        recenterWhenIdle = false
+        super.onDetachedFromWindow(view, recycler)
+    }
 
     override fun onLayoutChildren(recycler: RecyclerView.Recycler, state: RecyclerView.State) {
         super.onLayoutChildren(recycler, state)
+        applyWheelTransforms()
+    }
+
+    override fun onScrollStateChanged(state: Int) {
+        super.onScrollStateChanged(state)
+
+        if (state == RecyclerView.SCROLL_STATE_IDLE && recenterWhenIdle) {
+            recenterWhenIdle = false
+            attachedRecycler?.let { recycler ->
+                scrollToScreenCenter(recycler, selectedIndex)
+            }
+        }
+
         applyWheelTransforms()
     }
 
@@ -33,6 +59,30 @@ class WheelLayoutManager(context: Context) : LinearLayoutManager(context, VERTIC
     fun setSelectedIndex(index: Int) {
         selectedIndex = index
         applyWheelTransforms()
+    }
+
+    fun smoothScrollToScreenCenter(position: Int) {
+        val recycler = attachedRecycler ?: return
+        recenterWhenIdle = true
+
+        val scroller = object : androidx.recyclerview.widget.LinearSmoothScroller(recycler.context) {
+            override fun getVerticalSnapPreference(): Int = SNAP_TO_ANY
+
+            override fun calculateDtToFit(
+                viewStart: Int,
+                viewEnd: Int,
+                boxStart: Int,
+                boxEnd: Int,
+                snapPreference: Int
+            ): Int {
+                return (boxStart + boxEnd) / 2 - (viewStart + viewEnd) / 2
+            }
+
+            override fun calculateTimeForScrolling(dx: Int): Int = 120
+        }
+
+        scroller.targetPosition = position
+        startSmoothScroll(scroller)
     }
 
     fun scrollToScreenCenter(recycler: RecyclerView, position: Int) {
