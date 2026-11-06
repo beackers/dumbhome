@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.RecyclerView
 import com.beackers.dumbhome.R
 import com.beackers.dumbhome.WallpaperStorage
@@ -115,24 +114,7 @@ class LauncherActivity : AppCompatActivity() {
             return
         }
 
-        val scroller = object : LinearSmoothScroller(this) {
-            override fun getVerticalSnapPreference(): Int = SNAP_TO_ANY
-
-            override fun calculateDtToFit(
-                viewStart: Int,
-                viewEnd: Int,
-                boxStart: Int,
-                boxEnd: Int,
-                snapPreference: Int
-            ): Int {
-                return (boxStart + boxEnd) / 2 - (viewStart + viewEnd) / 2
-            }
-
-            override fun calculateTimeForScrolling(dx: Int): Int = 120
-        }
-
-        scroller.targetPosition = selectedIndex
-        layoutManager.startSmoothScroll(scroller)
+        layoutManager.smoothScrollToScreenCenter(selectedIndex)
     }
 
     private fun launchSelected() {
